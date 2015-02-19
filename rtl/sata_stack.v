@@ -208,10 +208,7 @@ module sata_stack (
   output      [12:0]  slw_d_count,
   output      [12:0]  slw_write_count,
   output      [3:0]   slw_buffer_pos
-
-
 );
-
 
 //Parameters
 //Registers/Wires
@@ -262,9 +259,6 @@ wire        [31:0]  phy_tx_dout;
 wire                phy_tx_isk;
 
 //User Interface state machine
-
-
-
 
 //Transport Layer
 wire                sync_escape;

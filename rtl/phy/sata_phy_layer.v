@@ -52,8 +52,6 @@ output      [3:0]   lax_state
 );
 
 
-
-
 //Parameters
 parameter           NOT_READY         = 4'h0;
 parameter           SEND_FIRST_ALIGN  = 4'h1;
