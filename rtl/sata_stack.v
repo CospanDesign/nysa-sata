@@ -712,5 +712,4 @@ assign                dbg_cl_of_size          = of_size;
 
 
 //Synchronous Logic
-
 endmodule
