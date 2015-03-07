@@ -82,6 +82,7 @@ input               single_rdwr
 
 );
 
+reg         [31:0]  test_id = 0;
 
 
 //Submodules
@@ -120,11 +121,11 @@ sata_stack ss (
   .d2h_status            (d2h_status           ),
   .d2h_error             (d2h_error            ),
 
-  .user_din              (user_din             ),
-  .user_din_stb          (user_din_stb         ),
-  .user_din_ready        (user_din_ready       ),
-  .user_din_activate     (user_din_activate    ),
-  .user_din_size         (user_din_size        ),
+  .user_din              (user_din             ),   //User Data Here
+  .user_din_stb          (user_din_stb         ),   //Strobe Each Data word in here
+  .user_din_ready        (user_din_ready       ),   //Using PPFIFO Ready Signal
+  .user_din_activate     (user_din_activate    ),   //Activate PPFIFO Channel
+  .user_din_size         (user_din_size        ),   //Find the size of the data to write to the device
 
   .user_dout             (user_dout            ),
   .user_dout_ready       (user_dout_ready      ),

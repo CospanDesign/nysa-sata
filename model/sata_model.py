@@ -28,11 +28,14 @@ class SataController(object):
         self.dut.soft_reset_en = 0
         self.dut.sector_count = 0
         self.dut.sector_address = 0
+
         self.dut.user_din = 0
         self.dut.user_din_stb = 0
         self.dut.user_din_activate = 0
+
         self.dut.user_dout_activate = 0
         self.dut.user_dout_stb = 0
+
         self.dut.sin_count = 0
         self.dut.dout_count = 0
         self.dut.hold = 0
@@ -44,3 +47,17 @@ class SataController(object):
 
         yield(self.wait_clocks(100))
         self.dut.platform_ready = 1
+
+        yield(self.wait_clocks(10))
+        self.dut.soft_reset_en = 1
+        yield(self.wait_clocks(10))
+        self.dut.soft_reset_en = 0
+
+    def ready(self):
+        if self.dut.sata_ready == 1:
+            return True
+        return False
+
+    @cocotb.coroutine
+    def wait_for_idle(self):
+        cocotb.triggers.RisingEdge(self.dut.sata_ready)
