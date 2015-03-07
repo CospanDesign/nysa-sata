@@ -155,6 +155,7 @@ reg       [31:0]    bump_buffer [0:3];
 reg       [3:0]     data_pointer;
 
 
+//XXX: Fix this aweful HACK!
 wire      [31:0]    d0_buf;
 wire      [31:0]    d1_buf;
 wire      [31:0]    d2_buf;
@@ -198,14 +199,14 @@ crc c (
 //Asynchronous Logic
 assign              idle  = (state == IDLE);
 
-assign              tx_dout = (send_x_rdy)  ? `PRIM_X_RDY                                       :
-                              (send_sof)    ? `PRIM_SOF                                         :
-                              (send_eof)    ? `PRIM_EOF                                         :
-                              (send_wtrm)   ? `PRIM_WTRM                                        :
-                              (send_cont)   ? `PRIM_CONT                                        :
-                              (send_hold)   ? `PRIM_HOLD                                        :
-                              (send_holda)  ? `PRIM_HOLDA                                       :
-                              (send_sync)   ? `PRIM_SYNC                                        :
+assign              tx_dout = (send_x_rdy)  ? `PRIM_X_RDY:
+                              (send_sof)    ? `PRIM_SOF:
+                              (send_eof)    ? `PRIM_EOF:
+                              (send_wtrm)   ? `PRIM_WTRM:
+                              (send_cont)   ? `PRIM_CONT:
+                              (send_hold)   ? `PRIM_HOLD:
+                              (send_holda)  ? `PRIM_HOLDA:
+                              (send_sync)   ? `PRIM_SYNC:
                               bump_buffer[buffer_pos];
 
 assign              tx_isk  = ( send_x_rdy  ||

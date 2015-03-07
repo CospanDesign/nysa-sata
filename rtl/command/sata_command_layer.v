@@ -29,9 +29,12 @@ SOFTWARE.
 module sata_command_layer (
 
   input               rst,            //reset
+  input               linkup,
   input               clk,
   input               data_in_clk,
+  input               data_in_clk_valid,
   input               data_out_clk,
+  input               data_out_clk_valid,
 
 //User Interface
   output              sata_init,
@@ -54,8 +57,6 @@ module sata_command_layer (
 
   input       [15:0]  sector_count,
   input       [47:0]  sector_address,
-
-  input               fifo_reset,
 
   input       [31:0]  user_din,
   input               user_din_stb,
@@ -160,7 +161,6 @@ reg                 cntrl_send_data_stb;
 reg                 send_command_stb;
 reg                 prev_send_command;
 
-
 wire                dev_busy;
 wire                dev_data_req;
 
@@ -214,65 +214,60 @@ wire        [23:0]  of_write_size;
 wire                of_read_strobe;
 
 
-
-
-//XXX: There is a bug in the PPFIFO in that the FPGA code the FIFO cannot be filled up
-//Submodules
-
 //ping pong FIFO
 //Input FIFO
 ppfifo # (
-  .DATA_WIDTH           (`DATA_SIZE             ),
-  .ADDRESS_WIDTH        (`FIFO_ADDRESS_WIDTH + 1)
+  .DATA_WIDTH           (`DATA_SIZE               ),
+  .ADDRESS_WIDTH        (`FIFO_ADDRESS_WIDTH      )
 ) fifo_in (
-  .reset                (rst  || fifo_reset     ),
+  .reset                (rst && data_in_clk_valid ),  //XXX: Veify that new PPFIFO doesn't need an external reset
 
   //write side
 //XXX: This can be different clocks
-  .write_clock          (data_in_clk            ),
-  .write_data           (if_write_data          ),
-  .write_ready          (if_write_ready         ),
-  .write_activate       (if_write_activate      ),
-  .write_fifo_size      (if_write_size          ),
-  .write_strobe         (if_write_strobe        ),
-  .starved              (if_starved             ),
-
-  //read side
-//XXX: This can be different clocks
-  .read_clock           (clk                    ),
-  .read_strobe          (if_read_strobe         ),
-  .read_ready           (if_read_ready          ),
-  .read_activate        (if_read_activate       ),
-  .read_count           (if_read_size           ),
-  .read_data            (if_read_data           )
-);
-
-
-//Output FIFO
-ppfifo # (
-  .DATA_WIDTH           (`DATA_SIZE             ),
-  .ADDRESS_WIDTH        (`FIFO_ADDRESS_WIDTH + 1)
-) fifo_out (
-  .reset                (rst                    ),
-
-  //write side
-//XXX: This can be different clocks
-  .write_clock          (clk                    ),
-  .write_data           (of_write_data          ),
-  .write_ready          (of_write_ready         ),
-  .write_activate       (of_write_activate      ),
-  .write_fifo_size      (of_write_size          ),
-  .write_strobe         (of_write_strobe        ),
-  .starved              (out_fifo_starved       ),
-
-  //read side
-//XXX: This can be different clocks
-  .read_clock           (data_out_clk           ),
-  .read_strobe          (of_read_strobe         ),
-  .read_ready           (of_read_ready          ),
-  .read_activate        (of_read_activate       ),
-  .read_count           (of_read_size           ),
-  .read_data            (of_read_data           )
+  .write_clock          (data_in_clk              ),
+  .write_data           (if_write_data            ),
+  .write_ready          (if_write_ready           ),
+  .write_activate       (if_write_activate        ),
+  .write_fifo_size      (if_write_size            ),
+  .write_strobe         (if_write_strobe          ),
+  .starved              (if_starved               ),
+                                                  
+  //read side                                     
+//XXX: This can be different clocks               
+  .read_clock           (clk                      ),
+  .read_strobe          (if_read_strobe           ),
+  .read_ready           (if_read_ready            ),
+  .read_activate        (if_read_activate         ),
+  .read_count           (if_read_size             ),
+  .read_data            (if_read_data             )
+);                                                
+                                                  
+                                                  
+//Output FIFO                                     
+ppfifo # (                                        
+  .DATA_WIDTH           (`DATA_SIZE               ),
+  .ADDRESS_WIDTH        (`FIFO_ADDRESS_WIDTH      )
+) fifo_out (                                      
+  .reset                (rst && data_out_clk_valid),
+                                                  
+  //write side                                    
+//XXX: This can be different clocks               
+  .write_clock          (clk                      ),
+  .write_data           (of_write_data            ),
+  .write_ready          (of_write_ready           ),
+  .write_activate       (of_write_activate        ),
+  .write_fifo_size      (of_write_size            ),
+  .write_strobe         (of_write_strobe          ),
+  .starved              (out_fifo_starved         ),
+                                                  
+  //read side                                     
+//XXX: This can be different clocks               
+  .read_clock           (data_out_clk             ),
+  .read_strobe          (of_read_strobe           ),
+  .read_ready           (of_read_ready            ),
+  .read_activate        (of_read_activate         ),
+  .read_count           (of_read_size             ),
+  .read_data            (of_read_data             )
 );
 
 
@@ -359,7 +354,7 @@ assign  reset_timeout         = (reset_count >=  `RESET_TIMEOUT);
 
 //Control State Machine
 always @ (posedge clk) begin
-  if (rst) begin
+  if (rst || (!linkup)) begin
     cntrl_state                   <=  IDLE;
 
     h2d_features                  <=  `D2H_REG_FEATURES;
@@ -386,9 +381,6 @@ always @ (posedge clk) begin
     //Reset Count
     if (reset_count < `RESET_TIMEOUT) begin
       reset_count                 <=  reset_count + 1;
-    end
-    if (fifo_reset) begin
-      reset_count                 <=  0;
     end
     if (!reset_timeout) begin
       cntrl_state                 <=  IDLE;
@@ -486,7 +478,7 @@ end
 
 //Read State Machine
 always @ (posedge clk) begin
-  if (rst) begin
+  if (rst || (!linkup)) begin
     read_state                    <=  IDLE;
     sync_escape                   <=  0;
     read_data_stb                 <=  0;
@@ -561,7 +553,7 @@ end
 
 //Write State Machine
 always @ (posedge clk) begin
-  if (rst) begin
+  if (rst || (!linkup)) begin
     write_state                   <=  IDLE;
 
     dma_send_data_stb             <=  0;

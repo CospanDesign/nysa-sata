@@ -28,7 +28,9 @@ module sata_stack (
   input               rst,            //reset
   input               clk,            //clock used to run the stack
   input               data_in_clk,
+  input               data_in_clk_valid,
   input               data_out_clk,
+  input               data_out_clk_valid,
 
   input               platform_ready,   //the underlying physical platform is
   output  wire        linkup,           //link is finished
@@ -75,8 +77,6 @@ module sata_stack (
   output      [15:0]  d2h_sector_count,
   output      [7:0]   d2h_status,
   output      [7:0]   d2h_error,
-
-  input               fifo_reset,
 
   input       [31:0]  user_din,
   input               user_din_stb,
@@ -319,10 +319,13 @@ wire                t_remote_abort;
 
 //Submodules
 sata_command_layer scl (
-  .rst                  (rst  | !linkup           ),
+  .rst                  (rst                      ),
+  .linkup               (linkup                   ),
   .clk                  (clk                      ),
   .data_in_clk          (data_in_clk              ),
+  .data_in_clk_valid    (data_in_clk_valid        ),
   .data_out_clk         (data_out_clk             ),
+  .data_out_clk_valid   (data_out_clk_valid       ),
 
   //Application Interface
   .sata_init            (sata_init                ),
@@ -343,8 +346,6 @@ sata_command_layer scl (
 
   .sector_count         (sector_count             ),
   .sector_address       (sector_address           ),
-
-  .fifo_reset           (fifo_reset               ),
 
   .user_din             (user_din                 ),
   .user_din_stb         (user_din_stb             ),
@@ -477,8 +478,6 @@ sata_transport_layer stl (
   .d2h_error              (d2h_error              ),
 
   //command layer data interface
-  .fifo_reset             (fifo_reset             ),
-
   .cl_if_ready            (cl_if_ready            ),
   .cl_if_activate         (cl_if_activate         ),
   .cl_if_size             (cl_if_size             ),

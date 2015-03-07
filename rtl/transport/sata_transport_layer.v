@@ -78,8 +78,6 @@ module sata_transport_layer (
 //DMA Specific Control
 
 //Data Control
-  input               fifo_reset,
-
   input               cl_if_ready,
   output reg          cl_if_activate,
   input       [23:0]  cl_if_size,
@@ -388,9 +386,6 @@ always @ (posedge clk) begin
     //Always attempt to get the incomming buffer
     if (cl_if_ready && !cl_if_activate) begin
       cl_if_activate            <=  1;
-    end
-    if (fifo_reset) begin
-      cl_if_activate            <=  0;
     end
 
     case (state)
