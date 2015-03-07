@@ -138,11 +138,7 @@ output      [31:0]  hd_data_from_host,
 output              hd_write_to_host,
 input       [31:0]  hd_data_to_host
 
-
 );
-
-
-
 
 //Parameters
 //Registers/Wires
@@ -402,90 +398,90 @@ faux_sata_hd_transport  ftl (
   //Link Layer Interface
   .link_layer_ready     (ll_ready               ),
 
-  .ll_write_start       (t_write_start         ),
-  .ll_write_strobe      (t_write_strobe        ),
-  .ll_write_finished    (t_write_finished      ),
-  .ll_write_data        (t_write_data          ),
-  .ll_write_size        (t_write_size          ),
-  .ll_write_hold        (t_write_hold          ),
-  .ll_write_abort       (t_write_abort         ),
-  .ll_xmit_error        (t_xmit_error          ),
+  .ll_write_start       (t_write_start          ),
+  .ll_write_strobe      (t_write_strobe         ),
+  .ll_write_finished    (t_write_finished       ),
+  .ll_write_data        (t_write_data           ),
+  .ll_write_size        (t_write_size           ),
+  .ll_write_hold        (t_write_hold           ),
+  .ll_write_abort       (t_write_abort          ),
+  .ll_xmit_error        (t_xmit_error           ),
 
-  .ll_read_start        (t_read_start          ),
-  .ll_read_ready        (t_read_ready          ),
-  .ll_read_data         (t_read_data           ),
-  .ll_read_strobe       (t_read_strobe         ),
-  .ll_read_finished     (t_read_finished       ),
-  .ll_read_crc_ok       (t_read_crc_ok         ),
-  .ll_remote_abort      (t_remote_abort        )
+  .ll_read_start        (t_read_start           ),
+  .ll_read_ready        (t_read_ready           ),
+  .ll_read_data         (t_read_data            ),
+  .ll_read_strobe       (t_read_strobe          ),
+  .ll_read_finished     (t_read_finished        ),
+  .ll_read_crc_ok       (t_read_crc_ok          ),
+  .ll_remote_abort      (t_remote_abort         )
 
 
 );
 
 faux_hd_command_layer fcl(
-  .rst                  (rst                  ),
-  .clk                  (clk                  ),
+  .rst                  (rst                    ),
+  .clk                  (clk                    ),
 
-  .command_layer_ready  (command_layer_ready  ),
+  .command_layer_ready  (command_layer_ready    ),
 
-  .hd_read_from_host    (hd_read_from_host    ),
-  .hd_data_from_host    (hd_data_from_host    ),
+  .hd_read_from_host    (hd_read_from_host      ),
+  .hd_data_from_host    (hd_data_from_host      ),
 
-  .hd_write_to_host     (hd_write_to_host     ),
-  .hd_data_to_host      (hd_data_to_host      ),
+  .hd_write_to_host     (hd_write_to_host       ),
+  .hd_data_to_host      (hd_data_to_host        ),
 
 
-  .transport_layer_ready(transport_layer_ready),
-  .send_reg_stb         (cl_send_reg_stb      ),
-  .send_dma_act_stb     (cl_send_dma_act_stb  ),
-  .send_data_stb        (cl_send_data_stb     ),
-  .send_pio_stb         (cl_send_pio_stb      ),
-  .send_dev_bits_stb    (cl_send_dev_bits_stb ),
+  .transport_layer_ready(transport_layer_ready  ),
+  .send_reg_stb         (cl_send_reg_stb        ),
+  .send_dma_act_stb     (cl_send_dma_act_stb    ),
+  .send_data_stb        (cl_send_data_stb       ),
+  .send_pio_stb         (cl_send_pio_stb        ),
+  .send_dev_bits_stb    (cl_send_dev_bits_stb   ),
 
-  .remote_abort         (remote_abort         ),
-  .xmit_error           (xmit_error           ),
-  .read_crc_fail        (read_crc_fail        ),
+  .remote_abort         (remote_abort           ),
+  .xmit_error           (xmit_error             ),
+  .read_crc_fail        (read_crc_fail          ),
 
-  .h2d_reg_stb          (h2d_reg_stb          ),
-  .h2d_data_stb         (h2d_data_stb         ),
+  .h2d_reg_stb          (h2d_reg_stb            ),
+  .h2d_data_stb         (h2d_data_stb           ),
 
-  .pio_request          (pio_request          ),
-  .pio_transfer_count   (cl_pio_transfer_count),
-  .pio_direction        (cl_pio_direction     ),
-  .pio_e_status         (cl_pio_e_status      ),
+  .pio_request          (pio_request            ),
+  .pio_transfer_count   (cl_pio_transfer_count  ),
+  .pio_direction        (cl_pio_direction       ),
+  .pio_e_status         (cl_pio_e_status        ),
 
   //FIS Structure
-  .h2d_command          (h2d_command          ),
-  .h2d_features         (h2d_features         ),
-  .h2d_cmd_bit          (h2d_cmd_bit          ),
-  .h2d_port_mult        (h2d_port_mult        ),
-  .h2d_control          (h2d_control          ),
-  .h2d_device           (h2d_device           ),
-  .h2d_lba              (h2d_lba              ),
-  .h2d_sector_count     (h2d_sector_count     ),
+  .h2d_command          (h2d_command            ),
+  .h2d_features         (h2d_features           ),
+  .h2d_cmd_bit          (h2d_cmd_bit            ),
+  .h2d_port_mult        (h2d_port_mult          ),
+  .h2d_control          (h2d_control            ),
+  .h2d_device           (h2d_device             ),
+  .h2d_lba              (h2d_lba                ),
+  .h2d_sector_count     (h2d_sector_count       ),
 
-  .d2h_interrupt        (cl_d2h_interrupt     ),
-  .d2h_notification     (cl_d2h_notification  ),
-  .d2h_status           (cl_d2h_status        ),
-  .d2h_error            (cl_d2h_error         ),
-  .d2h_port_mult        (cl_d2h_port_mult     ),
-  .d2h_device           (cl_d2h_device        ),
-  .d2h_lba              (cl_d2h_lba           ),
-  .d2h_sector_count     (cl_d2h_sector_count  ),
+  .d2h_interrupt        (cl_d2h_interrupt       ),
+  .d2h_notification     (cl_d2h_notification    ),
+  .d2h_status           (cl_d2h_status          ),
+  .d2h_error            (cl_d2h_error           ),
+  .d2h_port_mult        (cl_d2h_port_mult       ),
+  .d2h_device           (cl_d2h_device          ),
+  .d2h_lba              (cl_d2h_lba             ),
+  .d2h_sector_count     (cl_d2h_sector_count    ),
 
   //command layer data interface
-  .cl_if_strobe         (cl_if_strobe         ),
-  .cl_if_data           (if_data              ),
-  .cl_if_ready          (if_ready             ),
-  .cl_if_activate       (cl_if_activate       ),
-  .cl_if_size           (if_size              ),
+  .cl_if_strobe         (cl_if_strobe           ),
+  .cl_if_data           (if_data                ),
+  .cl_if_ready          (if_ready               ),
+  .cl_if_activate       (cl_if_activate         ),
+  .cl_if_size           (if_size                ),
 
-  .cl_of_strobe         (cl_of_strobe         ),
-  .cl_of_data           (cl_of_data           ),
-  .cl_of_ready          (of_ready             ),
-  .cl_of_activate       (cl_of_activate       ),
-  .cl_of_size           (of_size              ),
-  .cl_state             (cl_state             )
+  .cl_of_strobe         (cl_of_strobe           ),
+  .cl_of_data           (cl_of_data             ),
+  .cl_of_ready          (of_ready               ),
+  .cl_of_activate       (cl_of_activate         ),
+  .cl_of_size           (of_size                ),
+  .cl_state             (cl_state               )
 
 );
 
