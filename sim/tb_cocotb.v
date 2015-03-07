@@ -13,7 +13,6 @@ output              linkup,           //link is finished
 output              sata_ready,
 output              busy,
 
-
 input               write_data_en,
 input               read_data_en,
 
@@ -48,22 +47,8 @@ output              transport_layer_ready,
 output              link_layer_ready,
 output              phy_ready,
 
-output  [31:0]      tx_dout,
-output              tx_isk,
-output              tx_comm_reset,
-output              tx_comm_wake,
-output              tx_elec_idle,
-
-output  [31:0]      rx_din,
-output  [3:0]       rx_isk,
-output              rx_elec_idle,
-output              comm_init_detect,
-output              comm_wake_detect,
-
-output              rx_byte_is_aligned,
-
-output              prim_scrambler_en,
-output              data_scrambler_en,
+input               prim_scrambler_en,
+input               data_scrambler_en,
 
 //Data Interface
 output              tx_set_elec_idle,
@@ -72,8 +57,6 @@ output              hd_ready,
 input               platform_ready,
 
 //Debug
-output      [31:0]  hd_data_to_host,
-
 input       [23:0]  din_count,
 input       [23:0]  dout_count,
 input               hold,
@@ -82,7 +65,22 @@ input               single_rdwr
 
 );
 
-reg         [31:0]  test_id = 0;
+reg     [31:0]      test_id = 0;
+
+wire    [31:0]      tx_dout;
+wire                tx_isk;
+wire                tx_comm_reset;
+wire                tx_comm_wake;
+wire                tx_elec_idle;
+
+wire    [31:0]      rx_din;
+wire    [3:0]       rx_isk;
+wire                rx_elec_idle;
+wire                comm_init_detect;
+wire                comm_wake_detect;
+
+wire                rx_byte_is_aligned;
+
 
 
 //Submodules
@@ -91,15 +89,15 @@ sata_stack ss (
   .rst                   (rst                  ),  //reset
   .clk                   (clk                  ),  //clock used to run the stack
   .data_in_clk           (clk                  ),
+  .data_in_clk_valid     (1'b1                 ),
   .data_out_clk          (clk                  ),
+  .data_out_clk_valid    (1'b1                 ),
 
   .platform_ready        (platform_ready       ),  //the underlying physical platform is
   .linkup                (linkup               ),  //link is finished
   .sata_ready            (sata_ready           ),
 
-
   .busy                  (busy                 ),
-
 
   .write_data_en         (write_data_en        ),
   .single_rdwr           (single_rdwr          ),
@@ -217,6 +215,10 @@ faux_sata_hd  fshd   (
 
 
 );
+
+//Asynchronous Logic
+assign  hd_data_to_host               = 32'h01234567;
+
 
 //Synchronous Logic
 //Simulation Control

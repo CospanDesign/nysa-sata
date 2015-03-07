@@ -3,6 +3,7 @@ from cocotb.clock import Clock
 from cocotb.triggers import Timer, RisingEdge
 
 CLK_PERIOD = 4
+RESET_PERIOD = 100
 
 class SataController(object):
 
@@ -11,6 +12,8 @@ class SataController(object):
         self.dut.log.warning("Setup Sata")
         cocotb.fork(Clock(dut.clk, CLK_PERIOD).start())
         self.dut.rst = 0
+        self.dut.prim_scrambler_en = 0
+        self.dut.data_scrambler_en = 0
 
     @cocotb.coroutine
     def wait_clocks(self, num_clks):
@@ -20,14 +23,12 @@ class SataController(object):
     @cocotb.coroutine
     def reset(self):
         self.dut.rst = 0
-        yield(self.wait_clocks(10))
-        self.dut.rst = 1
-
         self.dut.write_data_en = 0
         self.dut.read_data_en = 0
         self.dut.soft_reset_en = 0
         self.dut.sector_count = 0
         self.dut.sector_address = 0
+        self.dut.fifo_reset = 0
 
         self.dut.user_din = 0
         self.dut.user_din_stb = 0
@@ -42,7 +43,17 @@ class SataController(object):
         self.dut.single_rdwr = 0
         self.dut.platform_ready = 0
 
-        yield(self.wait_clocks(10))
+        self.dut.sector_address = 0
+        self.dut.sector_count = 0
+        self.dut.write_data_en = 0
+        self.dut.read_data_en = 0
+        self.dut.single_rdwr = 0
+
+
+        yield(self.wait_clocks(RESET_PERIOD / 2))
+        self.dut.rst = 1
+
+        yield(self.wait_clocks(RESET_PERIOD / 2))
         self.dut.rst = 0
 
         yield(self.wait_clocks(100))
