@@ -2,6 +2,10 @@
 test/fake/temp
 wip
 
+*.vvp
+
+results.xml
+
 # VIM temporary files
 *~
 *.swp
