@@ -22,7 +22,8 @@ def bootup_test(dut):
     sata = SataController(dut, CLK_PERIOD)
     yield(sata.reset())
 
-    yield(sata.wait_clocks(1000))
+    #yield(sata.wait_for_idle()0))
+    yield(sata.wait_for_idle())
     if not sata.ready():
         dut.log.error("Sata Is not ready")
         TestFailure()
@@ -46,7 +47,7 @@ def short_write_test(dut):
     sata = SataController(dut, CLK_PERIOD)
     yield(sata.reset())
 
-    yield(sata.wait_clocks(100))
+    yield(sata.wait_for_idle())
     dut.log.error("Test is not implemented!")
     #cocotb.TestFailure()
 
@@ -65,7 +66,7 @@ def short_read_test(dut):
     sata = SataController(dut, CLK_PERIOD)
     yield(sata.reset())
 
-    yield(sata.wait_clocks(100))
+    yield(sata.wait_for_idle())
     dut.log.error("Test is not implemented!")
     #cocotb.TestFailure()
 
@@ -84,7 +85,7 @@ def long_write_test(dut):
     dut.test_id = 3
     sata = SataController(dut, CLK_PERIOD)
     yield(sata.reset())
-    yield(sata.wait_clocks(100))
+    yield(sata.wait_for_idle())
     dut.log.error("Test is not implemented!")
     #cocotb.TestFailure()
 
@@ -105,7 +106,7 @@ def long_read_test(dut):
     dut.test_id = 4
     sata = SataController(dut, CLK_PERIOD)
     yield(sata.reset())
-    yield(sata.wait_clocks(100))
+    yield(sata.wait_for_idle())
     dut.log.error("Test is not implemented!")
     #cocotb.TestFailure()
 
@@ -123,7 +124,7 @@ def long_write_with_easy_back_preassure_test(dut):
     dut.test_id = 5
     sata = SataController(dut, CLK_PERIOD)
     yield(sata.reset())
-    yield(sata.wait_clocks(100))
+    yield(sata.wait_for_idle())
     dut.log.error("Test is not implemented!")
     #cocotb.TestFailure()
 
@@ -143,7 +144,7 @@ def long_read_with_easy_back_preassure_test(dut):
     dut.test_id = 6
     sata = SataController(dut, CLK_PERIOD)
     yield(sata.reset())
-    yield(sata.wait_clocks(100))
+    yield(sata.wait_for_idle())
     dut.log.error("Test is not implemented!")
     #cocotb.TestFailure()
 
@@ -164,7 +165,7 @@ def long_write_with_hard_back_preassure_test(dut):
     dut.test_id = 7
     sata = SataController(dut, CLK_PERIOD)
     yield(sata.reset())
-    yield(sata.wait_clocks(100))
+    yield(sata.wait_for_idle())
     dut.log.error("Test is not implemented!")
     #cocotb.TestFailure()
 
@@ -184,7 +185,7 @@ def long_read_with_hard_back_preassure_test(dut):
     dut.test_id = 8
     sata = SataController(dut, CLK_PERIOD)
     yield(sata.reset())
-    yield(sata.wait_clocks(100))
+    yield(sata.wait_for_idle())
     dut.log.error("Test is not implemented!")
     #cocotb.TestFailure()
 

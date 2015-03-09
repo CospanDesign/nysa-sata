@@ -1,6 +1,6 @@
 import cocotb
 from cocotb.clock import Clock
-from cocotb.triggers import Timer, RisingEdge
+from cocotb.triggers import Timer, RisingEdge, FallingEdge
 
 CLK_PERIOD = 4
 RESET_PERIOD = 100
@@ -71,8 +71,13 @@ class SataController(object):
 
     @cocotb.coroutine
     def wait_for_idle(self):
-        cocotb.triggers.RisingEdge(self.dut.sata_ready)
+        yield(cocotb.triggers.FallingEdge(self.dut.busy))
+        yield(cocotb.triggers.RisingEdge(self.dut.sata_ready))
 
     @cocotb.coroutine
     def write_to_hard_drive(self, length):
+        pass
+
+    @cocotb.coroutine
+    def read_from_hard_drive(self, length):
         pass
