@@ -264,6 +264,7 @@ always @ (posedge clk) begin
             //check the CRC
             state         <=  READ_END;
             send_r_ip     <=  1;
+            //if (prev_data == prev_crc) begin
             if (prev_data == prev_crc) begin
               crc_ok      <=  1;
             end
@@ -298,7 +299,7 @@ always @ (posedge clk) begin
             else begin
               prev_data   <=  rx_din;
             end
-            prev_crc      <=  crc_dout;
+            prev_crc      <=  crc_din;
           end
 
         end
