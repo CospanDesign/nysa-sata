@@ -22,13 +22,12 @@ def bootup_test(dut):
     sata = SataController(dut, CLK_PERIOD)
     yield(sata.reset())
 
-    yield(sata.wait_clocks(400))
+    yield(sata.wait_clocks(1000))
     if not sata.ready():
         dut.log.error("Sata Is not ready")
         TestFailure()
     else:
         dut.log.info("Sata is Ready")
-    yield(sata.wait_clocks(10000))
 
 
 @cocotb.test(skip = True)
