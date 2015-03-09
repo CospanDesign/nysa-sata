@@ -57,14 +57,11 @@ output              hd_ready,
 input               platform_ready,
 
 //Debug
-input       [23:0]  din_count,
-input       [23:0]  dout_count,
 input               hold,
 
 input               single_rdwr
 
 );
-
 reg     [31:0]      test_id = 0;
 
 wire    [31:0]      tx_dout;
@@ -81,12 +78,49 @@ wire                comm_wake_detect;
 
 wire                rx_byte_is_aligned;
 
+reg                 r_rst;
+reg                 r_write_data_en;
+reg                 r_read_data_en;
+reg                 r_soft_reset_en;
+reg                 r_sector_count;
+reg                 r_sector_address;
+reg                 r_user_din;
+reg                 r_user_din_stb;
+reg                 r_user_din_activate;
+reg                 r_user_dout_activate;
+reg                 r_user_dout_stb;
+reg                 r_prim_scrambler_en;
+reg                 r_data_scrambler_en;
+reg                 r_platform_ready;
+reg                 r_dout_count;
+reg                 r_hold;
+reg                 r_single_rdwr;
+
+
+//There is a bug in COCOTB when stiumlating a signal sometimes it can be corrupted if not registered
+always @ (*) r_rst                = rst;
+always @ (*) r_write_data_en      = write_data_en;
+always @ (*) r_read_data_en       = read_data_en;
+always @ (*) r_soft_reset_en      = soft_reset_en;
+always @ (*) r_sector_count       = sector_count;
+always @ (*) r_sector_address     = sector_address;
+always @ (*) r_user_din           = user_din;
+always @ (*) r_user_din_stb       = user_din_stb;
+always @ (*) r_user_din_activate  = user_din_activate;
+always @ (*) r_user_dout_activate = user_dout_activate;
+always @ (*) r_user_dout_stb      = user_dout_stb;
+always @ (*) r_prim_scrambler_en  = prim_scrambler_en;
+always @ (*) r_data_scrambler_en  = data_scrambler_en;
+always @ (*) r_platform_ready     = platform_ready;
+always @ (*) r_hold               = hold;
+always @ (*) r_single_rdwr        = single_rdwr;
+
 
 
 //Submodules
 
 sata_stack ss (
-  .rst                   (rst                  ),  //reset
+  .rst                   (r_rst                ),  //reset
   .clk                   (clk                  ),  //clock used to run the stack
   .data_in_clk           (clk                  ),
   .data_in_clk_valid     (1'b1                 ),
@@ -99,16 +133,16 @@ sata_stack ss (
 
   .busy                  (busy                 ),
 
-  .write_data_en         (write_data_en        ),
-  .single_rdwr           (single_rdwr          ),
-  .read_data_en          (read_data_en         ),
+  .write_data_en         (r_write_data_en      ),
+  .single_rdwr           (r_single_rdwr        ),
+  .read_data_en          (r_read_data_en       ),
 
   .send_user_command_stb (1'b0                 ),
-  .soft_reset_en         (soft_reset_en        ),
+  .soft_reset_en         (r_soft_reset_en      ),
   .command               (1'b0                 ),
 
-  .sector_count          (sector_count         ),
-  .sector_address        (sector_address       ),
+  .sector_count          (r_sector_count       ),
+  .sector_address        (r_sector_address     ),
 
   .d2h_interrupt         (d2h_interrupt        ),
   .d2h_notification      (d2h_notification     ),
@@ -119,16 +153,16 @@ sata_stack ss (
   .d2h_status            (d2h_status           ),
   .d2h_error             (d2h_error            ),
 
-  .user_din              (user_din             ),   //User Data Here
-  .user_din_stb          (user_din_stb         ),   //Strobe Each Data word in here
+  .user_din              (r_user_din           ),   //User Data Here
+  .user_din_stb          (r_user_din_stb       ),   //Strobe Each Data word in here
   .user_din_ready        (user_din_ready       ),   //Using PPFIFO Ready Signal
-  .user_din_activate     (user_din_activate    ),   //Activate PPFIFO Channel
+  .user_din_activate     (r_user_din_activate  ),   //Activate PPFIFO Channel
   .user_din_size         (user_din_size        ),   //Find the size of the data to write to the device
 
   .user_dout             (user_dout            ),
   .user_dout_ready       (user_dout_ready      ),
-  .user_dout_activate    (user_dout_activate   ),
-  .user_dout_stb         (user_dout_stb        ),
+  .user_dout_activate    (r_user_dout_activate ),
+  .user_dout_stb         (r_user_dout_stb      ),
   .user_dout_size        (user_dout_size       ),
 
   .transport_layer_ready (transport_layer_ready),
@@ -149,12 +183,12 @@ sata_stack ss (
   .rx_byte_is_aligned    (rx_byte_is_aligned   ),
 
 
-  .prim_scrambler_en     (prim_scrambler_en    ),
-  .data_scrambler_en     (data_scrambler_en    )
+  .prim_scrambler_en     (r_prim_scrambler_en  ),
+  .data_scrambler_en     (r_data_scrambler_en  )
 );
 
 faux_sata_hd  fshd   (
-  .rst                   (rst                  ),
+  .rst                   (r_rst                ),
   .clk                   (clk                  ),
   .tx_dout               (rx_din               ),
   .tx_isk                (rx_isk               ),
@@ -174,9 +208,9 @@ faux_sata_hd  fshd   (
 //  .phy_ready             (phy_ready            ),
 
 
-  .dbg_data_scrambler_en (data_scrambler_en    ),
+  .dbg_data_scrambler_en (r_data_scrambler_en  ),
 
-  .dbg_hold              (hold                ),
+  .dbg_hold              (r_hold               ),
 
   .dbg_ll_write_start    (0                    ),
   .dbg_ll_write_data     (0                    ),
