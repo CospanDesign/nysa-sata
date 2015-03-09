@@ -200,6 +200,8 @@ wire                if_read_activate;
 wire        [23:0]  if_read_size;
 wire        [31:0]  if_read_data;
 
+wire                if_reset;
+
 wire        [31:0]  of_write_data;
 wire        [1:0]   of_write_ready;
 wire        [1:0]   of_write_activate;
@@ -213,6 +215,7 @@ wire                of_read_activate;
 wire        [23:0]  of_write_size;
 wire                of_read_strobe;
 
+wire                of_reset;
 
 //ping pong FIFO
 //Input FIFO
@@ -220,7 +223,7 @@ ppfifo # (
   .DATA_WIDTH           (`DATA_SIZE               ),
   .ADDRESS_WIDTH        (`FIFO_ADDRESS_WIDTH      )
 ) fifo_in (
-  .reset                (rst && data_in_clk_valid ),  //XXX: Veify that new PPFIFO doesn't need an external reset
+  .reset                (if_reset                 ),  //XXX: Veify that new PPFIFO doesn't need an external reset
 
   //write side
 //XXX: This can be different clocks
@@ -231,27 +234,28 @@ ppfifo # (
   .write_fifo_size      (if_write_size            ),
   .write_strobe         (if_write_strobe          ),
   .starved              (if_starved               ),
-                                                  
-  //read side                                     
-//XXX: This can be different clocks               
+
+  //read side
+//XXX: This can be different clocks
   .read_clock           (clk                      ),
   .read_strobe          (if_read_strobe           ),
   .read_ready           (if_read_ready            ),
   .read_activate        (if_read_activate         ),
   .read_count           (if_read_size             ),
   .read_data            (if_read_data             )
-);                                                
-                                                  
-                                                  
-//Output FIFO                                     
-ppfifo # (                                        
+);
+
+
+//Output FIFO
+ppfifo # (
   .DATA_WIDTH           (`DATA_SIZE               ),
   .ADDRESS_WIDTH        (`FIFO_ADDRESS_WIDTH      )
-) fifo_out (                                      
-  .reset                (rst && data_out_clk_valid),
-                                                  
-  //write side                                    
-//XXX: This can be different clocks               
+) fifo_out (
+  .reset                (of_reset                 ),
+  //.reset                (0),
+
+  //write side
+//XXX: This can be different clocks
   .write_clock          (clk                      ),
   .write_data           (of_write_data            ),
   .write_ready          (of_write_ready           ),
@@ -259,9 +263,9 @@ ppfifo # (
   .write_fifo_size      (of_write_size            ),
   .write_strobe         (of_write_strobe          ),
   .starved              (out_fifo_starved         ),
-                                                  
-  //read side                                     
-//XXX: This can be different clocks               
+
+  //read side
+//XXX: This can be different clocks
   .read_clock           (data_out_clk             ),
   .read_strobe          (of_read_strobe           ),
   .read_ready           (of_read_ready            ),
@@ -288,6 +292,9 @@ assign  of_write_data         = t_of_data;
 
 assign  of_write_activate     = t_of_activate;
 assign  of_write_strobe       = t_of_strobe;
+
+assign  of_reset              = (rst && data_out_clk_valid);
+assign  if_reset              = (rst && data_in_clk_valid);
 
 
 
