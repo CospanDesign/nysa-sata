@@ -3,7 +3,7 @@ TOPLEVEL_LANG ?= verilog
 PWD=$(shell pwd)
 TOPDIR=$(PWD)/..
 COCOTB=/home/cospan/Projects/cocotb
-PYTHONPATH := $(TOPDIR)/model:$(PYTHONPATH)
+PYTHONPATH := ./model:$(PYTHONPATH)
 export PYTHONPATH
 
 

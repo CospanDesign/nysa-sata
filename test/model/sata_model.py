@@ -12,8 +12,8 @@ class SataController(object):
         self.dut.log.warning("Setup Sata")
         cocotb.fork(Clock(dut.clk, CLK_PERIOD).start())
         self.dut.rst = 0
-        self.dut.prim_scrambler_en = 0
-        self.dut.data_scrambler_en = 0
+        self.dut.prim_scrambler_en = 1
+        self.dut.data_scrambler_en = 1
 
     @cocotb.coroutine
     def wait_clocks(self, num_clks):
@@ -72,3 +72,7 @@ class SataController(object):
     @cocotb.coroutine
     def wait_for_idle(self):
         cocotb.triggers.RisingEdge(self.dut.sata_ready)
+
+    @cocotb.coroutine
+    def write_to_hard_drive(self, length):
+        pass
