@@ -413,10 +413,7 @@ always @ (posedge clk) begin
       end
     end
 
-
-
     case (cntrl_state)
-
       IDLE: begin
 
         //Soft Reset will break out of any flow
