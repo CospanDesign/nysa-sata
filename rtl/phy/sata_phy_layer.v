@@ -126,7 +126,9 @@ always @ (posedge clk) begin
       NOT_READY:  begin
         align_count   <=  0;
         if (linkup) begin
+`ifdef VERBOSE
           $display ("sata_phy_layer: linkup! send aligns");
+`endif
           state       <=  SEND_FIRST_ALIGN;
         end
       end
@@ -139,7 +141,11 @@ always @ (posedge clk) begin
       READY:      begin
         if (align_count ==  255) begin
           state       <=  SEND_FIRST_ALIGN;
+`ifdef VERBOSE
           $display ("sata_phy_layer: linkup! send alignment dwords");
+`else
+          $display ("sata_phy_layer: .");
+`endif
 //Send an align primitive
         end
       end

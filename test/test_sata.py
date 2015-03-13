@@ -54,7 +54,7 @@ def short_write_test(dut):
     dut.log.info("Wrote 1 piece of data to SATA")
 
 
-@cocotb.test(skip = False)
+@cocotb.test(skip = True)
 def short_read_test(dut):
     """
     Description:
@@ -99,7 +99,7 @@ def long_write_test(dut):
     dut.log.info("Wrote %d piece of data to SATA" % data_count)
 
 
-@cocotb.test(skip = False)
+@cocotb.test(skip = True)
 def long_read_test(dut):
     """
     Description:
@@ -169,28 +169,6 @@ def long_write_with_easy_back_preassure_test(dut):
     #dut.h2u_read_enable = 0
     dut.log.info("Wrote %d piece of data to SATA" % length)
 
-
-@cocotb.test(skip = True)
-def long_read_with_easy_back_preassure_test(dut):
-    """
-    Description:
-        Perform a continuous read with back preassure from the hard drive
-    Test ID: 6
-    Expected Result:
-        -Address should be seen on the fake hard drive side
-        -Data should be read out of the hard drive
-        -Length of data written into the hard drive should be read out
-            of the stack side
-    """
-    dut.test_id = 6
-    sata = SataController(dut, CLK_PERIOD)
-    yield(sata.reset())
-    yield(sata.wait_for_idle())
-    dut.log.error("Test is not implemented!")
-    #cocotb.TestFailure()
-
-
-
 @cocotb.test(skip = True)
 def long_write_with_hard_back_preassure_test(dut):
     """
@@ -247,22 +225,76 @@ def long_write_with_hard_back_preassure_test(dut):
     #dut.h2u_read_enable = 0
     dut.log.info("Wrote %d piece of data to SATA" % length)
 
-@cocotb.test(skip = True)
-def long_read_with_hard_back_preassure_test(dut):
+@cocotb.test(skip = False)
+def long_write_long_read_back_preassure_test(dut):
     """
     Description:
-        Perform a long read from the hard drive and simulate
-        difficult stall conditions
+        Perform a long write to the hard drive and simulate difficult
+        stall condition, then start a new long read transaction
     Test ID: 8
     Expected Result:
         -Address should be seen on the fake hard drive side
         -Data should be read out of the hard drive
+        -Length of data in should be equal to the length of data read
     """
     dut.test_id = 8
     sata = SataController(dut, CLK_PERIOD)
     yield(sata.reset())
     yield(sata.wait_for_idle())
-    dut.log.error("Test is not implemented!")
-    #cocotb.TestFailure()
+
+    length = 9000
+    address = 0x00
+
+    dut.write_count = length
+    dut.write_enable = 1
+    dut.u2h_write_enable = 1
+    dut.u2h_write_count = length
+    #dut.h2u_read_enable = 1
+    dut.sector_address = address
+    #What does this do?
+    dut.sector_count = 0
+    dut.write_data_en = 1
+    yield(sata.wait_clocks(1))
+    dut.write_data_en = 0
+    yield(sata.wait_clocks(2500))
+    dut.hold = 1
+    yield(sata.wait_clocks(1))
+    dut.hold = 0
+    yield(sata.wait_clocks(400))
+    dut.hold = 1
+    yield(sata.wait_clocks(10))
+    dut.hold = 0
+    yield(sata.wait_clocks(400))
+    dut.hold = 1
+    yield(sata.wait_clocks(20))
+    dut.hold = 0
+    yield(sata.wait_clocks(400))
+    dut.hold = 1
+    yield(sata.wait_clocks(1))
+    dut.hold = 0
+
+    yield(sata.wait_for_idle())
+
+    dut.write_enable = 0
+    dut.write_count = 0
+    yield(sata.wait_clocks(100))
+    #dut.h2u_read_enable = 0
+    dut.log.info("Wrote %d piece of data to SATA" % length)
+
+    data_count = 0x900
+    yield(sata.read_from_hard_drive(data_count, 0x00))
+    yield(sata.wait_clocks(10))
+
+    yield(sata.wait_for_idle())
+    yield(sata.wait_clocks(100))
+    dut.log.info("Read %d words of data" % data_count)
+
+
+    data_count = 400
+    yield(sata.write_to_hard_drive(data_count, 0x00))
+    yield(sata.wait_clocks(200))
+
+    dut.log.info("Wrote %d piece of data to SATA" % data_count)
+
 
 
