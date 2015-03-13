@@ -101,8 +101,8 @@ parameter IDLE              = 4'h2;
 parameter DMA_READY         = 4'h3;
 parameter READ_DATA         = 4'h4;
 parameter SEND_DATA         = 4'h5;
-parameter SEND_STATUS       = 4'h6;
-parameter TEST_FOR_END      = 4'h7;
+parameter READ_IN_PROGRESS  = 4'h6;
+parameter SEND_STATUS       = 4'h7;
 
 //Registers/Wires
 reg         [3:0]   state               = SLEEP_START;
@@ -209,7 +209,7 @@ always @ (posedge clk) begin
 
             case (h2d_command)
               `COMMAND_DMA_READ_EX: begin
-                send_data_stb           <=  1;
+                //send_data_stb           <=  1;
                 sector_count            <=  0;
                 sector_size             <=  h2d_sector_count;
                 state                   <=  SEND_DATA;
@@ -253,26 +253,26 @@ always @ (posedge clk) begin
       end
       SEND_DATA: begin
         if (transport_layer_ready) begin
-          if (sector_count < sector_size) begin
-            sector_count            <=  sector_count + 1;
-            send_data_stb           <=  1;
-            state                   <=  TEST_FOR_END;
-          end
-          else begin
-          end
+          sector_count              <=  sector_count + 1;
+          send_data_stb             <=  1;
+          state                     <=  READ_IN_PROGRESS;
+          //state                     <=  SEND_STATUS;
         end
       end
-      TEST_FOR_END: begin
-        if (sector_count < sector_size) begin
-          state                     <=  SEND_DATA;
+      READ_IN_PROGRESS: begin
+        if (!transport_layer_ready) begin
+            state                   <= SEND_STATUS;
         end
-        else begin
-          if (transport_layer_ready) begin
-            send_reg_stb            <=  1;
-            //Send a done register
-            state                   <=  IDLE;
-          end
-        end
+        //if (sector_count < sector_size) begin
+        //  state                     <=  SEND_DATA;
+        //end
+        //else begin
+        //  if (transport_layer_ready) begin
+        //    send_reg_stb            <=  1;
+        //    //Send a done register
+        //    state                   <=  SEND_STATUS;
+        //  end
+        //end
       end
       SEND_STATUS: begin
         if (transport_layer_ready) begin
