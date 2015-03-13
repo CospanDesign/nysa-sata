@@ -9,7 +9,14 @@ export PYTHONPATH
 
 EXTRA_ARGS+=-I$(TOPDIR)/rtl/
 
-VERILOG_SOURCES =  $(TOPDIR)/rtl/generic/blk_mem.v
+VERILOG_SOURCES =  $(TOPDIR)/sim/test_in.v
+VERILOG_SOURCES += $(TOPDIR)/sim/test_out.v
+
+VERILOG_SOURCES += $(TOPDIR)/sim/hd_data_writer.v
+VERILOG_SOURCES += $(TOPDIR)/sim/hd_data_reader.v
+
+
+VERILOG_SOURCES += $(TOPDIR)/rtl/generic/blk_mem.v
 VERILOG_SOURCES += $(TOPDIR)/rtl/generic/cross_clock_enable.v
 VERILOG_SOURCES += $(TOPDIR)/rtl/generic/debounce.v
 VERILOG_SOURCES += $(TOPDIR)/rtl/generic/ppfifo.v
@@ -42,3 +49,6 @@ MODULE=test_sata
 
 include $(COCOTB)/makefiles/Makefile.inc
 include $(COCOTB)/makefiles/Makefile.sim
+
+wave:
+	gtkwave waveforms.gtkw &

@@ -30,24 +30,16 @@ class SataController(object):
         self.dut.sector_address = 0
         self.dut.fifo_reset = 0
 
-        self.dut.user_din = 0
-        self.dut.user_din_stb = 0
-        self.dut.user_din_activate = 0
-
-        self.dut.user_dout_activate = 0
-        self.dut.user_dout_stb = 0
-
-        self.dut.sin_count = 0
-        self.dut.dout_count = 0
         self.dut.hold = 0
         self.dut.single_rdwr = 0
         self.dut.platform_ready = 0
 
-        self.dut.sector_address = 0
-        self.dut.sector_count = 0
-        self.dut.write_data_en = 0
-        self.dut.read_data_en = 0
-        self.dut.single_rdwr = 0
+        self.dut.u2h_write_enable = 0
+        self.dut.u2h_write_count = 0
+        self.dut.h2u_read_enable = 0
+
+        self.dut.hd_read_enable = 0;
+        self.dut.user_read_enable = 0;
 
 
         yield(self.wait_clocks(RESET_PERIOD / 2))
@@ -75,9 +67,34 @@ class SataController(object):
         yield(cocotb.triggers.RisingEdge(self.dut.sata_ready))
 
     @cocotb.coroutine
-    def write_to_hard_drive(self, length):
-        pass
+    def write_to_hard_drive(self, length, address):
+        self.dut.u2h_write_enable = 1
+        self.dut.u2h_write_count = length
+        #self.dut.h2u_read_enable = 1
+        self.dut.sector_address = address
+        #What does this do?
+        self.dut.sector_count = 0
+        self.dut.write_data_en = 1
+        yield(self.wait_clocks(1))
+        self.dut.write_data_en = 0
+        yield(self.wait_for_idle())
+        yield(self.wait_clocks(100))
+        #self.dut.h2u_read_enable = 0
 
     @cocotb.coroutine
-    def read_from_hard_drive(self, length):
-        pass
+    def read_from_hard_drive(self, length, address):
+        self.dut.read_data_en = 1
+        self.dut.sector_address = address
+        sector_count = (length / 0x800) + 1
+        self.dut.sector_count = sector_count
+        #Initiate pattern generation within the data generators
+        #Also tell the reader to analyze the incomming data
+        self.dut.h2u_read_enable = 1
+        yield(self.wait_clocks(10))
+        while (self.dut.h2u_read_total_count.value < length):
+            self.dut.log.info("count: %d" % self.dut.h2u_read_total_count.value)
+            yield(self.wait_clocks(100))
+
+        self.dut.h2u_read_enable = 0
+        self.dut.read_data_en = 0
+
