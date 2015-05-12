@@ -37,7 +37,7 @@ VERILOG_SOURCES += $(TOPDIR)/sim/faux_sata_hd_transport.v
 VERILOG_SOURCES += $(TOPDIR)/sim/faux_sata_hd_command_layer.v
 VERILOG_SOURCES += $(TOPDIR)/sim/faux_sata_hd.v
 
-VERILOG_SOURCES += $(TOPDIR)/sim/tb_cocotb.v
+VERILOG_SOURCES += $(TOPDIR)/test/tb_cocotb.v
 
 
 TOPLEVEL = tb_cocotb

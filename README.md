@@ -7,21 +7,13 @@ Staus: TLDR Version: Not finished! (longer version read below)
 
 This code was written a long time ago and I've learned much more about verilog and project organization
 since then. It has been proven in a Virtex 6 FPGA reading and writing to/from four Sata 2 hard drives at
-the same time. There were some issues found when the internal buffers inside the hard drives began to
-fill up requiring a lot of starting and stopping of this stack. It lead to some dropped data. There was
-a horrible fix for it in the sata_link_write.v involving a small buffer. This made if very difficult to
-debug because the stack wouldn't allow me to read the non-scrambled data within the logic analyzer.
-There should be a more elegant solution to it.
-
-Perhaps this code should be changed over to employ a Moore style state machines.
+the same time.
 
 Most of the license is MIT but some of the licenses are GPL
 
 TODO: Fix Link layer... there is a small FIFO in there that is used to handle all starting and stopping
 of the read, it's a work around and needs to be fixed
 TODO: Fix Link layer so that it only instantiates one instance of the scrambler, not two
-
-TODO: Implement a testing framework with Cocotb
 
 Code Organization:
 
