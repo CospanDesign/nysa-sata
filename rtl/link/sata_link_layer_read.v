@@ -121,7 +121,7 @@ crc c (
 scrambler descr (
   .rst            (rst      ||  idle),
   .clk            (clk              ),
-  .prim_scrambler (0                ),
+  .prim_scrambler (1'b0             ),
   .en             (descr_en         ),
   .din            (rx_din           ),
   .dout           (descr_dout       )
