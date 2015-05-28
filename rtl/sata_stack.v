@@ -33,29 +33,28 @@ module sata_stack (
   input               data_out_clk_valid,
 
   input               platform_ready,   //the underlying physical platform is
-  output  wire        linkup,           //link is finished
-  output              sata_ready,
-  output              sata_init,
+  output              linkup,           //link is finished
 
   input               send_sync_escape,
-  input       [15:0]  user_features,
+  input   [15:0]      user_features,
 
 //User Interface
-  output              busy,
-  output              error,
+  output              sata_ready,
+  output              sata_busy,
 
+  output              hard_drive_error,
 
   input               write_data_en,
   input               single_rdwr,
   input               read_data_en,
 
   input               send_user_command_stb,
-  input               soft_reset_en,
-  input       [7:0]   command,
+  input               command_layer_reset,
+  input   [7:0]       hard_drive_command,
   output              pio_data_ready,
 
-  input       [15:0]  sector_count,
-  input       [47:0]  sector_address,
+  input   [15:0]      sector_count,
+  input   [47:0]      sector_address,
 
 
   output              dma_activate_stb,
@@ -63,32 +62,28 @@ module sata_stack (
   output              pio_setup_stb,
   output              d2h_data_stb,
   output              dma_setup_stb,
-  output  wire        set_device_bits_stb,
-
-  output              dbg_send_command_stb,
-  output              dbg_send_control_stb,
-  output              dbg_send_data_stb,
+  output              set_device_bits_stb,
 
   output              d2h_interrupt,
   output              d2h_notification,
-  output      [3:0]   d2h_port_mult,
-  output      [7:0]   d2h_device,
-  output      [47:0]  d2h_lba,
-  output      [15:0]  d2h_sector_count,
-  output      [7:0]   d2h_status,
-  output      [7:0]   d2h_error,
+  output  [3:0]       d2h_port_mult,
+  output  [7:0]       d2h_device,
+  output  [47:0]      d2h_lba,
+  output  [15:0]      d2h_sector_count,
+  output  [7:0]       d2h_status,
+  output  [7:0]       d2h_error,
 
-  input       [31:0]  user_din,
+  input   [31:0]      user_din,
   input               user_din_stb,
-  output      [1:0]   user_din_ready,
-  input       [1:0]   user_din_activate,
-  output      [23:0]  user_din_size,
+  output  [1:0]       user_din_ready,
+  input   [1:0]       user_din_activate,
+  output  [23:0]      user_din_size,
 
-  output      [31:0]  user_dout,
+  output  [31:0]      user_dout,
   output              user_dout_ready,
   input               user_dout_activate,
   input               user_dout_stb,
-  output      [23:0]  user_dout_size,
+  output  [23:0]      user_dout_size,
 
 
   output              transport_layer_ready,
@@ -98,7 +93,7 @@ module sata_stack (
 //Buffer
 //Platform Interface
   output  [31:0]      tx_dout,
-  output              tx_isk,
+  output              tx_isk,         //Connect All 4 'tx_isk'to this signal
   output              tx_comm_reset,
   output              tx_comm_wake,
   output              tx_elec_idle,
@@ -110,8 +105,11 @@ module sata_stack (
   input               comm_wake_detect,
   input               rx_byte_is_aligned,
 
-
 //Debug
+  output              dbg_send_command_stb,
+  output              dbg_send_control_stb,
+  output              dbg_send_data_stb,
+
   output              dbg_remote_abort,
   output              dbg_xmit_error,
   output              dbg_read_crc_error,
@@ -122,7 +120,7 @@ module sata_stack (
   output  [15:0]      dbg_pio_transfer_count,
   output  [7:0]       dbg_pio_e_status,
 
-//Host dbg_ to Device Regster Values
+//Host to Device Regster Values
   output  [7:0]       dbg_h2d_command,
   output  [15:0]      dbg_h2d_features,
   output  [7:0]       dbg_h2d_control,
@@ -136,26 +134,26 @@ module sata_stack (
 //Data Control
   output              dbg_cl_if_ready,
   output              dbg_cl_if_activate,
-  output      [23:0]  dbg_cl_if_size,
+  output  [23:0]      dbg_cl_if_size,
   output              dbg_cl_if_strobe,
-  output      [31:0]  dbg_cl_if_data,
+  output  [31:0]      dbg_cl_if_data,
 
-  output      [1:0]   dbg_cl_of_ready,
-  output      [1:0]   dbg_cl_of_activate,
+  output  [1:0]       dbg_cl_of_ready,
+  output  [1:0]       dbg_cl_of_activate,
   output              dbg_cl_of_strobe,
-  output      [31:0]  dbg_cl_of_data,
-  output      [23:0]  dbg_cl_of_size,
+  output  [31:0]      dbg_cl_of_data,
+  output  [23:0]      dbg_cl_of_size,
 
-  output      [3:0]   dbg_cc_lax_state,
-  output      [3:0]   dbg_cr_lax_state,
-  output      [3:0]   dbg_cw_lax_state,
+  output  [3:0]       dbg_cc_lax_state,
+  output  [3:0]       dbg_cr_lax_state,
+  output  [3:0]       dbg_cw_lax_state,
 
-  output      [3:0]   dbg_t_lax_state,
+  output  [3:0]       dbg_t_lax_state,
 
-  output      [3:0]   dbg_li_lax_state,
-  output      [3:0]   dbg_lr_lax_state,
-  output      [3:0]   dbg_lw_lax_state,
-  output      [3:0]   dbg_lw_lax_fstate,
+  output  [3:0]       dbg_li_lax_state,
+  output  [3:0]       dbg_lr_lax_state,
+  output  [3:0]       dbg_lw_lax_state,
+  output  [3:0]       dbg_lw_lax_fstate,
 
 //Link Layer
   input               prim_scrambler_en,
@@ -166,14 +164,14 @@ module sata_stack (
   output              dbg_ll_write_start,
   output              dbg_ll_write_strobe,
   output              dbg_ll_write_finished,
-  output       [31:0] dbg_ll_write_data,
-  output       [31:0] dbg_ll_write_size,
+  output  [31:0]      dbg_ll_write_data,
+  output  [31:0]      dbg_ll_write_size,
   output              dbg_ll_write_hold,
   output              dbg_ll_write_abort,
 
   output              dbg_ll_read_start,
   output              dbg_ll_read_strobe,
-  output      [31:0]  dbg_ll_read_data,
+  output  [31:0]      dbg_ll_read_data,
   output              dbg_ll_read_ready,
   output              dbg_ll_read_finished,
   output              dbg_ll_remote_abort,
@@ -182,7 +180,7 @@ module sata_stack (
   output              dbg_ll_send_crc,
 
 //Phy Layer
-  output      [3:0]   lax_state,
+  output  [3:0]       lax_state,
 
 //Primative Detection
   output              dbg_detect_sync,
@@ -204,10 +202,10 @@ module sata_stack (
 
   output              dbg_send_holda,
 
-  output      [23:0]  slw_in_data_addra,
-  output      [12:0]  slw_d_count,
-  output      [12:0]  slw_write_count,
-  output      [3:0]   slw_buffer_pos
+  output  [23:0]      slw_in_data_addra,
+  output  [12:0]      slw_d_count,
+  output  [12:0]      slw_write_count,
+  output  [3:0]       slw_buffer_pos
 );
 
 //Parameters
@@ -271,7 +269,6 @@ wire        [7:0]   h2d_device;
 wire        [47:0]  h2d_lba;
 wire        [15:0]  h2d_sector_count;
 
-
 wire                remote_abort;
 wire                xmit_error;
 wire                read_crc_error;
@@ -295,7 +292,6 @@ wire                cl_of_strobe;
 wire        [31:0]  cl_of_data;
 wire        [23:0]  cl_of_size;
 
-
 //Link Layer Interface
 wire                t_sync_escape;
 wire                t_write_start;
@@ -314,7 +310,6 @@ wire                t_read_strobe;
 wire                t_read_finished;
 wire                t_read_crc_ok;
 wire                t_remote_abort;
-
 //Comand Layer registers
 
 //Submodules
@@ -328,20 +323,19 @@ sata_command_layer scl (
   .data_out_clk_valid   (data_out_clk_valid       ),
 
   //Application Interface
-  .sata_init            (sata_init                ),
   .command_layer_ready  (sata_ready               ),
-  .busy                 (busy                     ),
-  .dev_error            (error                    ),
+  .sata_busy            (sata_busy                ),
+  .hard_drive_error     (hard_drive_error         ),
   .send_sync_escape     (send_sync_escape         ),
   .user_features        (user_features            ),
 
   .write_data_en        (write_data_en            ),
-  .single_rdwr          (single_rdwr              ),
   .read_data_en         (read_data_en             ),
+  .single_rdwr          (single_rdwr              ),
 
   .send_user_command_stb(send_user_command_stb    ),
-  .soft_reset_en        (soft_reset_en            ),
-  .command              (command                  ),
+  .command_layer_reset  (command_layer_reset      ),
+  .hard_drive_command   (hard_drive_command       ),
   .pio_data_ready       (pio_data_ready           ),
 
   .sector_count         (sector_count             ),
@@ -421,11 +415,7 @@ sata_command_layer scl (
   .cl_r_state           (dbg_cr_lax_state         ),
   .cl_w_state           (dbg_cw_lax_state         )
 
-
-
 );
-
-
 
 //Transport Layer
 sata_transport_layer stl (
@@ -686,7 +676,6 @@ assign                dbg_h2d_port_mult       = h2d_port_mult;
 assign                dbg_h2d_device          = h2d_device;
 assign                dbg_h2d_sector_count    = h2d_sector_count;
 
-
 assign                cl_if_ready             = if_ready;
 assign                dbg_cl_if_activate      = cl_if_activate;
 assign                if_activate             = cl_if_activate;
@@ -707,8 +696,6 @@ assign                of_data                 = cl_of_data;
 assign                dbg_cl_of_data          = cl_of_data;
 assign                cl_of_size              = of_size;
 assign                dbg_cl_of_size          = of_size;
-
-
 
 //Synchronous Logic
 endmodule

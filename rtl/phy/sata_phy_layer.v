@@ -43,14 +43,13 @@ input   [31:0]      rx_din,
 input   [3:0]       rx_isk,
 input               rx_elec_idle,
 input               rx_byte_is_aligned,
+
 input               comm_init_detect,
 input               comm_wake_detect,
 
 output              phy_ready,
 output      [3:0]   lax_state
-
 );
-
 
 //Parameters
 parameter           NOT_READY         = 4'h0;
@@ -71,31 +70,29 @@ wire        [31:0]  phy_tx_dout;
 wire                phy_tx_isk;
 wire                align_detected;
 
-
-
 //Submodules
 oob_controller oob (
-  .rst                (rst),
-  .clk                (clk),
+  .rst                (rst                ),
+  .clk                (clk                ),
 
   //OOB controller
-  .platform_ready     (platform_ready),
-  .linkup             (linkup),
+  .platform_ready     (platform_ready     ),
+  .linkup             (linkup             ),
 
   //Platform Control
-  .tx_dout            (oob_tx_dout),
-  .tx_isk             (oob_tx_isk),
-  .tx_comm_reset      (tx_comm_reset),
-  .tx_comm_wake       (tx_comm_wake),
-  .tx_set_elec_idle   (tx_elec_idle),
+  .tx_dout            (oob_tx_dout        ),
+  .tx_isk             (oob_tx_isk         ),
+  .tx_comm_reset      (tx_comm_reset      ),
+  .tx_comm_wake       (tx_comm_wake       ),
+  .tx_set_elec_idle   (tx_elec_idle       ),
 
-  .rx_din             (rx_din),
-  .rx_isk             (rx_isk),
-  .comm_init_detect   (comm_init_detect),
-  .comm_wake_detect   (comm_wake_detect),
-  .rx_byte_is_aligned (rx_byte_is_aligned),
-  .rx_is_elec_idle    (rx_elec_idle),
-  .lax_state          (lax_state)
+  .rx_din             (rx_din             ),
+  .rx_isk             (rx_isk             ),
+  .comm_init_detect   (comm_init_detect   ),
+  .comm_wake_detect   (comm_wake_detect   ),
+  .rx_byte_is_aligned (rx_byte_is_aligned ),
+  .rx_is_elec_idle    (rx_elec_idle       ),
+  .lax_state          (lax_state          )
 
 );
 
@@ -109,8 +106,6 @@ assign              phy_tx_isk      =  1;
 assign              align_detected  = ((rx_isk > 0) && (rx_din == `PRIM_ALIGN) && rx_byte_is_aligned);
 //assign              phy_ready       = ((state == READY) && (!align_detected));
 assign              phy_ready       = (state == READY);
-
-
 
 //Synchronous Logic
 always @ (posedge clk) begin

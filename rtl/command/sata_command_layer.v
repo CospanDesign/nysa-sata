@@ -37,9 +37,8 @@ module sata_command_layer (
   input               data_out_clk_valid,
 
 //User Interface
-  output              sata_init,
   output              command_layer_ready,
-  output  reg         busy,
+  output  reg         sata_busy,
   input               send_sync_escape,
   input       [15:0]  user_features,
 
@@ -47,13 +46,13 @@ module sata_command_layer (
   input               write_data_en,
   input               single_rdwr,
   input               read_data_en,
-  output              dev_error,
+  output              hard_drive_error,
 
   input               send_user_command_stb,
-  input               soft_reset_en,
+  input               command_layer_reset,
 
   output  reg         pio_data_ready,
-  input       [7:0]   command,
+  input       [7:0]   hard_drive_command,
 
   input       [15:0]  sector_count,
   input       [47:0]  sector_address,
@@ -327,12 +326,11 @@ assign  idle                  = (cntrl_state  == IDLE) &&
                                 (write_state  == IDLE) &&
                                 transport_layer_ready;
 
-assign  command_layer_ready   = idle;
-assign  sata_init             = reset_timeout;
+assign  command_layer_ready   = idle & reset_timeout;
 
 assign  h2d_command           = (write_data_en)   ?        `COMMAND_DMA_WRITE_EX    :
                                 (read_data_en)    ?        `COMMAND_DMA_READ_EX     :
-                                (send_user_command_stb) ? command                   :
+                                (send_user_command_stb) ? hard_drive_command        :
                                 h2d_command;
 
 assign  h2d_sector_count      = sector_count;
@@ -349,11 +347,11 @@ assign  h2d_device            = `D2H_REG_DEVICE;
 
 assign  dev_busy              = status[`STATUS_BUSY_BIT];
 assign  dev_data_req          = status[`STATUS_DRQ_BIT];
-assign  dev_error             = status[`STATUS_ERR_BIT];
+assign  hard_drive_error      = status[`STATUS_ERR_BIT];
 
-assign  cl_c_state           = cntrl_state;
-assign  cl_r_state           = read_state;
-assign  cl_w_state           = write_state;
+assign  cl_c_state            = cntrl_state;
+assign  cl_r_state            = read_state;
+assign  cl_w_state            = write_state;
 
 assign  reset_timeout         = (reset_count >=  `RESET_TIMEOUT);
 
@@ -377,7 +375,7 @@ always @ (posedge clk) begin
     send_command_stb              <=  0;
 
     reset_count                   <=  0;
-    busy                          <=  1;
+    sata_busy                     <=  1;
   end
   else begin
     t_send_control_stb            <=  0;
@@ -403,11 +401,11 @@ always @ (posedge clk) begin
     end
 
     if (t_d2h_reg_stb) begin
-      busy                        <=  0;
+      sata_busy                   <=  0;
       h2d_features                <=  `D2H_REG_FEATURES;
     end
     if (t_send_command_stb || t_send_control_stb || send_user_command_stb) begin
-      busy                        <=  1;
+      sata_busy                   <=  1;
       if (send_user_command_stb) begin
         h2d_features              <=  user_features;
       end
@@ -417,7 +415,7 @@ always @ (posedge clk) begin
       IDLE: begin
 
         //Soft Reset will break out of any flow
-        if ((soft_reset_en) && !srst) begin
+        if ((command_layer_reset) && !srst) begin
           srst                  <=  1;
           t_send_control_stb    <=  1;
           reset_count           <=  0;
@@ -427,7 +425,7 @@ always @ (posedge clk) begin
           //The only way to transition to another state is if CL is IDLE
 
           //User Initiated commands
-          if (!soft_reset_en && srst && reset_timeout) begin
+          if (!command_layer_reset && srst && reset_timeout) begin
             srst                  <=  0;
             t_send_control_stb    <=  1;
           end
@@ -475,7 +473,7 @@ always @ (posedge clk) begin
 
     if (send_sync_escape) begin
       cntrl_state                 <=  IDLE;
-      busy                        <=  0;
+      sata_busy                   <=  0;
     end
   end
 end
@@ -527,7 +525,7 @@ always @ (posedge clk) begin
           first_read          <=  0;
         end
         /*
-        if (soft_reset_en) begin
+        if (command_layer_reset) begin
 //XXX: Issue a SYNC ESCAPE to cancel a large read request otherwise let it play out
           //sync_escape         <=  1;
         end
@@ -538,7 +536,7 @@ always @ (posedge clk) begin
       end
     endcase
 
-    if (soft_reset_en || !reset_timeout || send_sync_escape) begin
+    if (command_layer_reset || !reset_timeout || send_sync_escape) begin
       if (read_state  != IDLE) begin
         sync_escape               <=  1;
       end
@@ -642,7 +640,7 @@ always @ (posedge clk) begin
     endcase
 
 
-    if (soft_reset_en || !reset_timeout) begin
+    if (command_layer_reset || !reset_timeout) begin
       //Break out of the normal flow and return to IDLE
       write_state                 <=  IDLE;
     end

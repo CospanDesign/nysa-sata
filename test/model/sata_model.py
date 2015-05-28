@@ -25,7 +25,7 @@ class SataController(object):
         self.dut.rst = 0
         self.dut.write_data_en = 0
         self.dut.read_data_en = 0
-        self.dut.soft_reset_en = 0
+        self.dut.command_layer_reset = 0
         self.dut.sector_count = 0
         self.dut.sector_address = 0
         self.dut.fifo_reset = 0
@@ -52,9 +52,9 @@ class SataController(object):
         self.dut.platform_ready = 1
 
         yield(self.wait_clocks(10))
-        self.dut.soft_reset_en = 1
+        self.dut.command_layer_reset = 1
         yield(self.wait_clocks(10))
-        self.dut.soft_reset_en = 0
+        self.dut.command_layer_reset = 0
 
     def ready(self):
         if self.dut.sata_ready == 1:
@@ -63,7 +63,7 @@ class SataController(object):
 
     @cocotb.coroutine
     def wait_for_idle(self):
-        yield(cocotb.triggers.FallingEdge(self.dut.busy))
+        yield(cocotb.triggers.FallingEdge(self.dut.sata_busy))
         yield(cocotb.triggers.RisingEdge(self.dut.sata_ready))
 
     @cocotb.coroutine

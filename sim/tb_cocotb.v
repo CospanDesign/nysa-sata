@@ -11,12 +11,12 @@ input               clk,
 
 output              linkup,           //link is finished
 output              sata_ready,
-output              busy,
+output              sata_busy,
 
 input               write_data_en,
 input               read_data_en,
 
-input               soft_reset_en,
+input               command_layer_reset,
 input       [15:0]  sector_count,
 input       [47:0]  sector_address,
 
@@ -77,7 +77,7 @@ wire                rx_byte_is_aligned;
 reg                 r_rst;
 reg                 r_write_data_en;
 reg                 r_read_data_en;
-reg                 r_soft_reset_en;
+reg                 r_command_layer_reset;
 reg     [15:0]      r_sector_count;
 reg     [47:0]      r_sector_address;
 reg                 r_prim_scrambler_en;
@@ -115,7 +115,7 @@ wire  [23:0]        user_din_size;
 always @ (*) r_rst                = rst;
 always @ (*) r_write_data_en      = write_data_en;
 always @ (*) r_read_data_en       = read_data_en;
-always @ (*) r_soft_reset_en      = soft_reset_en;
+always @ (*) r_command_layer_reset= command_layer_reset;
 always @ (*) r_sector_count       = sector_count;
 always @ (*) r_sector_address     = sector_address;
 always @ (*) r_prim_scrambler_en  = prim_scrambler_en;
@@ -196,15 +196,15 @@ sata_stack ss (
   .linkup                (linkup               ),  //link is finished
   .sata_ready            (sata_ready           ),
 
-  .busy                  (busy                 ),
+  .sata_busy             (sata_busy            ),
 
   .write_data_en         (r_write_data_en      ),
   .single_rdwr           (r_single_rdwr        ),
   .read_data_en          (r_read_data_en       ),
 
   .send_user_command_stb (1'b0                 ),
-  .soft_reset_en         (r_soft_reset_en      ),
-  .command               (1'b0                 ),
+  .command_layer_reset   (r_command_layer_reset),
+  .hard_drive_command    (1'b0                 ),
 
   .sector_count          (r_sector_count       ),
   .sector_address        (r_sector_address     ),

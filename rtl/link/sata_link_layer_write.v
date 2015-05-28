@@ -394,6 +394,7 @@ always @ (posedge clk) begin
 
   end
   else begin
+//XXX: Remove Bump Buffer
     if ((state == WRITE_START) || ((state != IDLE) &&  (d_count != write_count))) begin
       bump_buffer[3]  <=  bump_buffer[2];
       bump_buffer[2]  <=  bump_buffer[1];
@@ -401,6 +402,7 @@ always @ (posedge clk) begin
       bump_buffer[0]  <=  rd_dout;
       d_count         <=  write_count;
     end
+//XXX: End Remove Bump Buffer
 
     //write_strobe    <=  0;
     write_finished  <=  0;
