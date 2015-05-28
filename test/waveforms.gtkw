@@ -1,0 +1,133 @@
+[*]
+[*] GTKWave Analyzer v3.3.58 (w)1999-2014 BSI
+[*] Fri Mar 13 00:46:27 2015
+[*]
+[dumpfile] "/home/cospan/Projects/nysa-sata/test/design.vcd"
+[dumpfile_mtime] "Fri Mar 13 00:44:30 2015"
+[dumpfile_size] 47725380
+[savefile] "/home/cospan/Projects/nysa-sata/test/waveforms.gtkw"
+[timestart] 0
+[size] 1918 1059
+[pos] -1 -1
+*-13.549904 34168 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] tb_cocotb.
+[treeopen] tb_cocotb.fshd.
+[treeopen] tb_cocotb.fshd.fsll.
+[treeopen] tb_cocotb.ss.scl.fifo_out.
+[treeopen] tb_cocotb.ss.sll.
+[treeopen] tb_cocotb.ss.sll.ccon.
+[treeopen] tb_cocotb.ss.sll.slr.
+[sst_width] 213
+[signals_width] 214
+[sst_expanded] 1
+[sst_vpaned_height] 313
+@22
+tb_cocotb.test_id[31:0]
+@28
+tb_cocotb.hd_ready
+tb_cocotb.linkup
+tb_cocotb.phy_ready
+tb_cocotb.platform_ready
+tb_cocotb.ss.sata_ready
+tb_cocotb.ss.busy
+@200
+-
+@800200
+-SATA Stack
+@28
+[color] 5
+tb_cocotb.ss.clk
+[color] 5
+tb_cocotb.ss.rst
+@200
+-
+@800200
+-User Interface
+@1000200
+-User Interface
+@200
+-
+@28
+tb_cocotb.ss.sll.slr.data_valid
+tb_cocotb.ss.sll.slr.send_r_ok
+tb_cocotb.ss.sll.slr.send_r_ip
+tb_cocotb.ss.sll.slr.send_r_err
+@800200
+-SATA Commands
+@28
+tb_cocotb.ss.sata_ready
+@22
+tb_cocotb.ss.sector_count[15:0]
+@28
+tb_cocotb.ss.busy
+@22
+tb_cocotb.ss.sector_address[47:0]
+@23
+tb_cocotb.ss.sector_count[15:0]
+@28
+tb_cocotb.ss.send_command_stb
+tb_cocotb.ss.read_data_en
+tb_cocotb.ss.scl.t_d2h_reg_stb
+tb_cocotb.ss.scl.t_d2h_data_stb
+@22
+tb_cocotb.ss.scl.read_state[3:0]
+tb_cocotb.fshd.fcl.sector_size[15:0]
+tb_cocotb.fshd.fcl.sector_count[15:0]
+@28
+tb_cocotb.ss.scl.first_read
+@22
+tb_cocotb.ss.scl.sector_count[15:0]
+@1000200
+-SATA Commands
+@200
+-
+@2022
+^1 /tmp/../home/cospan/Projects/nysa-sata/test/../../../../../tmp/../home/cospan/Projects/nysa-sata/test/../../../../../tmp/../home/cospan/Projects/nysa-sata/test/../../../../../tmp/../home/cospan/Projects/nysa-sata/test/primitives.txt
+tb_cocotb.ss.sll.rx_din[31:0]
+^1 /tmp/../home/cospan/Projects/nysa-sata/test/../../../../../tmp/../home/cospan/Projects/nysa-sata/test/../../../../../tmp/../home/cospan/Projects/nysa-sata/test/../../../../../tmp/../home/cospan/Projects/nysa-sata/test/primitives.txt
+tb_cocotb.ss.sll.tx_dout[31:0]
+@1000200
+-SATA Stack
+@800200
+-Hard Drive
+@28
+[color] 2
+tb_cocotb.fshd.clk
+[color] 2
+tb_cocotb.fshd.rst
+@22
+tb_cocotb.fshd.fcl.state[3:0]
+@28
+tb_cocotb.fshd.fcl.send_data_stb
+tb_cocotb.fshd.fcl.transport_layer_ready
+@200
+-
+@1000200
+-Hard Drive
+@200
+-
+@28
+tb_cocotb.user_2_hd_reader.enable
+tb_cocotb.user_2_hd_reader.hd_read_from_host
+@22
+tb_cocotb.user_2_hd_reader.hd_data_from_host[31:0]
+tb_cocotb.user_2_hd_reader.test_data[31:0]
+@28
+[color] 1
+tb_cocotb.user_2_hd_reader.error
+tb_cocotb.hold
+@200
+-
+@28
+tb_cocotb.hd_2_user_reader.strobe
+@22
+tb_cocotb.hd_2_user_reader.count[23:0]
+@28
+tb_cocotb.hd_2_user_reader.enable
+tb_cocotb.hd_write_to_host
+tb_cocotb.hd_2_user_reader.ready
+tb_cocotb.hd_2_user_reader.activate
+@22
+tb_cocotb.hd_data_to_host[31:0]
+[pattern_trace] 1
+[pattern_trace] 0
