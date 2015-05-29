@@ -241,7 +241,8 @@ ppfifo # (
   .read_ready           (if_read_ready            ),
   .read_activate        (if_read_activate         ),
   .read_count           (if_read_size             ),
-  .read_data            (if_read_data             )
+  .read_data            (if_read_data             ),
+  .inactive             (                         )
 );
 
 
@@ -270,7 +271,8 @@ ppfifo # (
   .read_ready           (of_read_ready            ),
   .read_activate        (of_read_activate         ),
   .read_count           (of_read_size             ),
-  .read_data            (of_read_data             )
+  .read_data            (of_read_data             ),
+  .inactive             (                         )
 );
 
 

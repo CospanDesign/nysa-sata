@@ -72,8 +72,6 @@ wire                rx_elec_idle;
 wire                comm_init_detect;
 wire                comm_wake_detect;
 
-wire                rx_byte_is_aligned;
-
 reg                 r_rst;
 reg                 r_write_data_en;
 reg                 r_read_data_en;
@@ -191,6 +189,7 @@ sata_stack ss (
   .data_in_clk_valid     (1'b1                 ),
   .data_out_clk          (clk                  ),
   .data_out_clk_valid    (1'b1                 ),
+  .phy_error             (1'b0                 ),
 
   .platform_ready        (platform_ready       ),  //the underlying physical platform is
   .linkup                (linkup               ),  //link is finished
@@ -246,7 +245,6 @@ sata_stack ss (
   .rx_elec_idle          (rx_elec_idle         ),
   .comm_init_detect      (comm_init_detect     ),
   .comm_wake_detect      (comm_wake_detect     ),
-  .rx_byte_is_aligned    (rx_byte_is_aligned   ),
 
 
   .prim_scrambler_en     (r_prim_scrambler_en  ),
@@ -262,7 +260,6 @@ faux_sata_hd  fshd   (
   .rx_din                (tx_dout              ),
   .rx_isk                ({3'b000, tx_isk}     ),
   .rx_is_elec_idle       (tx_elec_idle         ),
-  .rx_byte_is_aligned    (rx_byte_is_aligned   ),
 
   .comm_reset_detect     (tx_comm_reset        ),
   .comm_wake_detect      (tx_comm_wake         ),

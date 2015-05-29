@@ -33,6 +33,8 @@ module sata_stack (
   input               data_out_clk_valid,
 
   input               platform_ready,   //the underlying physical platform is
+  output              platform_error,   //Underlying platform errored out, the clock is misaligned, stack should
+                                        //probably be reset
   output              linkup,           //link is finished
 
   input               send_sync_escape,
@@ -104,7 +106,7 @@ module sata_stack (
   input               rx_elec_idle,
   input               comm_init_detect,
   input               comm_wake_detect,
-  input               rx_byte_is_aligned,
+  input               phy_error,
 
 //Debug
   output              dbg_send_command_stb,
@@ -594,6 +596,7 @@ sata_phy_layer phy (
 
   //Control/Status
   .platform_ready         (platform_ready         ),
+  .platform_error         (platform_error         ),
   .linkup                 (linkup                 ),
 
   //Platform Interface
@@ -609,7 +612,7 @@ sata_phy_layer phy (
   .comm_init_detect       (comm_init_detect       ),
   .comm_wake_detect       (comm_wake_detect       ),
   .rx_elec_idle           (rx_elec_idle           ),
-  .rx_byte_is_aligned     (rx_byte_is_aligned     ),
+  .phy_error              (phy_error              ),
 
   .lax_state              (lax_state              ),
   .phy_ready              (phy_ready              )

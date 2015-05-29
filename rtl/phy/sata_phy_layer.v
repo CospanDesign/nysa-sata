@@ -31,6 +31,7 @@ input               rst,            //reset
 input               clk,
 
 input               platform_ready,   //the underlying physical platform is
+output              platform_error,
 output              linkup,           //link is finished
 
 output  [31:0]      tx_dout,
@@ -43,12 +44,12 @@ input               tx_oob_complete,
 input   [31:0]      rx_din,
 input   [3:0]       rx_isk,
 input               rx_elec_idle,
-input               rx_byte_is_aligned,
 
 input               comm_init_detect,
 input               comm_wake_detect,
 
 output              phy_ready,
+input               phy_error,
 output      [3:0]   lax_state
 );
 
@@ -69,7 +70,9 @@ wire                oob_tx_isk;
 //Phy Control
 wire        [31:0]  phy_tx_dout;
 wire                phy_tx_isk;
-wire                align_detected;
+//wire                align_detected;
+wire                oob_platform_error;
+reg                 phy_platform_error;
 
 //Submodules
 oob_controller oob (
@@ -77,7 +80,9 @@ oob_controller oob (
   .clk                (clk                ),
 
   //OOB controller
+  .phy_error          (phy_error          ),
   .platform_ready     (platform_ready     ),
+  .platform_error     (oob_platform_error ),
   .linkup             (linkup             ),
 
   //Platform Control
@@ -92,7 +97,6 @@ oob_controller oob (
   .rx_isk             (rx_isk             ),
   .comm_init_detect   (comm_init_detect   ),
   .comm_wake_detect   (comm_wake_detect   ),
-  .rx_byte_is_aligned (rx_byte_is_aligned ),
   .rx_is_elec_idle    (rx_elec_idle       ),
   .lax_state          (lax_state          )
 
@@ -105,15 +109,17 @@ assign              tx_isk          = !linkup ? oob_tx_isk  : phy_tx_isk;
 assign              phy_tx_dout     =  `PRIM_ALIGN;
 assign              phy_tx_isk      =  1;
 
-assign              align_detected  = ((rx_isk > 0) && (rx_din == `PRIM_ALIGN) && rx_byte_is_aligned);
+//assign              align_detected  = ((rx_isk > 0) && (rx_din == `PRIM_ALIGN) && !phy_error);
 //assign              phy_ready       = ((state == READY) && (!align_detected));
 assign              phy_ready       = (state == READY);
+assign              platform_error  = oob_platform_error || phy_platform_error;
 
 //Synchronous Logic
 always @ (posedge clk) begin
   if (rst) begin
     state             <=  NOT_READY;
     align_count       <=  0;
+    phy_platform_error<=  0;
   end
   else begin
     if (state == READY) begin
@@ -121,29 +127,30 @@ always @ (posedge clk) begin
     end
     case (state)
       NOT_READY:  begin
-        align_count   <=  0;
+        align_count         <=  0;
+        phy_platform_error  <=  0;
         if (linkup) begin
 `ifdef VERBOSE
           $display ("sata_phy_layer: linkup! send aligns");
 `endif
-          state       <=  SEND_FIRST_ALIGN;
+          state             <=  SEND_FIRST_ALIGN;
         end
       end
       SEND_FIRST_ALIGN: begin
-        state         <=  SEND_SECOND_ALIGN;
+        state               <=  SEND_SECOND_ALIGN;
       end
       SEND_SECOND_ALIGN: begin
-        state         <=  READY;
+        state               <=  READY;
       end
       READY:      begin
         if (align_count ==  255) begin
-          state       <=  SEND_FIRST_ALIGN;
+          state             <=  SEND_FIRST_ALIGN;
 `ifdef VERBOSE
           $display ("sata_phy_layer: linkup! send alignment dwords");
-`else
-          $display ("sata_phy_layer: .");
 `endif
-//Send an align primitive
+        end
+        if (phy_error) begin
+          phy_platform_error <=  1;
         end
       end
       default:    begin

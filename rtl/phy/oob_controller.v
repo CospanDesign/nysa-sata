@@ -31,6 +31,7 @@ input               rst,              //reset
 input               clk,
 
 input               platform_ready,   //the underlying physical platform is
+output  reg         platform_error,   //Underlyaing physal platform received an error, this should probably be a reset
 output  reg         linkup,           //link is finished
 
 output  reg         tx_comm_reset,     //send a init OOB signal
@@ -43,7 +44,7 @@ input               comm_wake_detect, //detected a wake on the rx lines
 input       [31:0]  rx_din,
 input       [3:0]   rx_isk,
 input               rx_is_elec_idle,
-input               rx_byte_is_aligned,
+input               phy_error,
 
 output  reg [31:0]  tx_dout,
 output  reg         tx_isk,
@@ -84,7 +85,7 @@ wire                sync_detected;
 //Submodules
 //Asynchronous Logic
 assign              timeout         = (timer == 0);
-assign              align_detected  = ((rx_isk > 0) && (rx_din == `PRIM_ALIGN) && rx_byte_is_aligned);
+assign              align_detected  = ((rx_isk > 0) && (rx_din == `PRIM_ALIGN) && !phy_error);
 assign              sync_detected   = ((rx_isk > 0) && (rx_din == `PRIM_SYNC));
 assign              lax_state       = state;
 
@@ -104,6 +105,7 @@ always @ (posedge clk) begin
     tx_isk              <=  0;
     tx_set_elec_idle    <=  1;
     no_align_count      <=  0;
+    platform_error      <=  0;
   end
   else begin
     //to support strobes, continuously reset the following signals
@@ -121,6 +123,7 @@ always @ (posedge clk) begin
     //main state machine, if this reaches ready an initialization sequence has completed
     case (state)
       IDLE: begin
+        platform_error      <=  0;
         linkup              <=  0;
         tx_set_elec_idle    <=  1;
         if (platform_ready) begin
@@ -255,13 +258,16 @@ always @ (posedge clk) begin
         end
       end
       READY:  begin
-        linkup      <=  1;
+        linkup              <=  1;
+        if (phy_error) begin
+          platform_error    <=  1;
+        end
         if (comm_init_detect) begin
           state             <=  IDLE;
         end
       end
       default: begin
-        state       <=  IDLE;
+        state               <=  IDLE;
       end
     endcase
 
