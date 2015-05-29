@@ -58,7 +58,6 @@ module ppfifo
 localparam FIFO_DEPTH = (1 << ADDRESS_WIDTH);
 
 //Local Registers/Wires
-assign  write_fifo_size     = FIFO_DEPTH;
 
 //Write Side
 wire                        ppfifo_ready;  // The write side only needs to
@@ -85,27 +84,6 @@ reg                         w_empty[1:0];
 reg                         w_reset;        //write side reset
 reg   [4:0]                 w_reset_timeout;
 wire                        ready;
-
-//assign  r_wselect           = (write_activate == 2'b00) ? 1'b0 :
-//                              (write_activate == 2'b01) ? 1'b0 :
-//                              (write_activate == 2'b10) ? 1'b1 :
-//                              reset ?                     1'b0 :
-//                              r_wselect;
-//                            //I know this can be shortened down but it's more
-//                            //readible thi way
-
-assign  addr_in             = {r_wselect, write_address};
-//assign  write_enable        = (write_activate > 0) && write_strobe;
-assign  ppfifo_ready        = !(w_reset || r_reset);
-assign  ready               = ppfifo_ready;
-
-//assign  wcc_tie_select      = (wcc_read_ready == 2'b00) ? 1'b0 :
-//                              (wcc_read_ready == 2'b01) ? 1'b0 :
-//                              (wcc_read_ready == 2'b10) ? 1'b1 :
-//                              wcc_tie_select;
-                                            // If the first FIFO is ready,
-                                            // then both FIFOs are ready then
-                                            // keep the first FIFO
 
 //Read Side
 wire  [ADDRESS_WIDTH: 0]    addr_out;     //Actual address to the BRAM
@@ -140,24 +118,49 @@ reg                         r_pre_read_wait;//Wait an extra cycle so the registe
 wire  [DATA_WIDTH - 1: 0]   w_read_data;    //data from the read FIFO
 reg   [DATA_WIDTH - 1: 0]   r_read_data;    //data from the read FIFO
 
+
+
+//assign  r_wselect           = (write_activate == 2'b00) ? 1'b0 :
+//                              (write_activate == 2'b01) ? 1'b0 :
+//                              (write_activate == 2'b10) ? 1'b1 :
+//                              reset ?                     1'b0 :
+//                              r_wselect;
+//                            //I know this can be shortened down but it's more
+//                            //readible thi way
+
+assign  write_fifo_size     = FIFO_DEPTH;
+
+assign  addr_in             = {r_wselect, write_address};
+//assign  write_enable        = (write_activate > 0) && write_strobe;
+assign  ppfifo_ready        = !(w_reset || r_reset);
+assign  ready               = ppfifo_ready;
+
+//assign  wcc_tie_select      = (wcc_read_ready == 2'b00) ? 1'b0 :
+//                              (wcc_read_ready == 2'b01) ? 1'b0 :
+//                              (wcc_read_ready == 2'b10) ? 1'b1 :
+//                              wcc_tie_select;
+                                            // If the first FIFO is ready,
+                                            // then both FIFOs are ready then
+                                            // keep the first FIFO
+
 assign  addr_out            = {r_rselect, r_address};
 
 
 //Debug
-wire  [23:0]                debug_f0_w_count;
-wire  [23:0]                debug_f1_w_count;
+//wire  [23:0]                debug_f0_w_count;
+//wire  [23:0]                debug_f1_w_count;
 
-wire  [23:0]                debug_f0_r_size;
-wire  [23:0]                debug_f1_r_size;
+//wire  [23:0]                debug_f0_r_size;
+//wire  [23:0]                debug_f1_r_size;
 
 //wire  [23:0]                debug_f0_r_count;
 //wire  [23:0]                debug_f1_r_count;
 
-assign  debug_f0_w_count    = w_count[0];
-assign  debug_f1_w_count    = w_count[1];
+//assign  debug_f0_w_count    = w_count[0];
+//assign  debug_f1_w_count    = w_count[1];
 
-assign  debug_f0_r_size     = r_size[0];
-assign  debug_f1_r_size     = r_size[1];
+//assign  debug_f0_r_size     = r_size[0];
+//assign  debug_f1_r_size     = r_size[1];
 
 assign  inactive            = (w_count[0] == 0) &&
                               (w_count[1] == 0) &&
