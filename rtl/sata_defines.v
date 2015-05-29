@@ -26,7 +26,7 @@ SOFTWARE.
 `define __SATA_DEFINES__
 
 //Presuming 75MHz clock
-`define CLOCK_RATE               (75000000)
+`define SATA_CLOCK_RATE               (75000000)
 // 1 / 880uS = 1136 times per seconds
 `define NORMAL_TIMEOUT           (1000000) / 880
 
@@ -36,7 +36,7 @@ SOFTWARE.
 `define FIFO_ADDRESS_WIDTH       11
 
 //880uS
-//`define INITIALIZE_TIMEOUT      ((`CLOCK_RATE) / (`NORMAL_TIMEOUT))
+//`define INITIALIZE_TIMEOUT      ((`SATA_CLOCK_RATE) / (`NORMAL_TIMEOUT))
 `define INITIALIZE_TIMEOUT      66000
 //`define SEND_WAKE_TIMEOUT       4E
 
