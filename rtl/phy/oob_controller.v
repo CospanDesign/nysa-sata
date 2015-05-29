@@ -35,6 +35,7 @@ output  reg         linkup,           //link is finished
 
 output  reg         tx_comm_reset,     //send a init OOB signal
 output  reg         tx_comm_wake,     //send a wake OOB signal
+input               tx_oob_complete,  //Phy has said we are finished with this OOB transaction
 
 input               comm_init_detect, //detected an init
 input               comm_wake_detect, //detected a wake on the rx lines
@@ -138,7 +139,7 @@ always @ (posedge clk) begin
 
         //strobe the comm init so that the platform will send an INIT OOB signal
         tx_comm_reset       <=  1;
-        if (timeout) begin
+        if (timeout || tx_oob_complete) begin
           timer               <=  32'd`INITIALIZE_TIMEOUT;
           state               <=  WAIT_FOR_INIT;
           $display ("oob_controller: wait for INIT");
@@ -153,7 +154,7 @@ always @ (posedge clk) begin
           state             <=  WAIT_FOR_NO_INIT;
           $display ("oob_controller: wait for INIT to go low");
         end
-        if (timeout) begin
+        if (timeout || tx_oob_complete) begin
           $display ("oob_controller: timed out while waiting for INIT");
           state             <=  IDLE;
         end
@@ -178,7 +179,7 @@ always @ (posedge clk) begin
         tx_comm_wake        <=  1;
 //XXX: Is this timeout correct?
         //880uS
-        if (timeout) begin
+        if (timeout || tx_oob_complete) begin
           //timer               <=  32'd`INITIALIZE_TIMEOUT;
           timer               <=  32'h000203AD;
           state               <=  WAIT_FOR_WAKE;
@@ -227,7 +228,7 @@ always @ (posedge clk) begin
           $display ("oob_controller: ALIGN detected");
           $display ("oob_controller: Send out my ALIGNs");
         end
-        if (timeout) begin
+        if (timeout || tx_oob_complete) begin
           //didn't read an align in time :( reset
           $display ("oob_controller: timed out while waiting for AIGN");
           state             <=  IDLE;

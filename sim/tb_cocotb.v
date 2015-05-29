@@ -239,6 +239,7 @@ sata_stack ss (
   .tx_comm_reset         (tx_comm_reset        ),
   .tx_comm_wake          (tx_comm_wake         ),
   .tx_elec_idle          (tx_elec_idle         ),
+  .tx_oob_complete       (1'b0                 ),
 
   .rx_din                (rx_din               ),
   .rx_isk                (rx_isk               ),

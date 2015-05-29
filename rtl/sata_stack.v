@@ -97,6 +97,7 @@ module sata_stack (
   output              tx_comm_reset,
   output              tx_comm_wake,
   output              tx_elec_idle,
+  input               tx_oob_complete,
 
   input   [31:0]      rx_din,
   input   [3:0]       rx_isk,
@@ -601,6 +602,7 @@ sata_phy_layer phy (
   .tx_comm_reset          (tx_comm_reset          ),
   .tx_comm_wake           (tx_comm_wake           ),
   .tx_elec_idle           (tx_elec_idle           ),
+  .tx_oob_complete        (tx_oob_complete        ),
 
   .rx_din                 (rx_din                 ),
   .rx_isk                 (rx_isk                 ),
