@@ -135,7 +135,6 @@ reg                 dhold_delay;
 //CRC
 //XXX: Tie the CRC_EN to the read strobe
 wire      [31:0]    crc_dout;
-reg       [31:0]    crc_data;
 
 //Scrambler
 reg                 scr_rst;
@@ -244,7 +243,6 @@ always @ (posedge clk) begin
     scr_rst         <=  1;
     wr_en           <=  0;
     write_strobe    <=  0;
-    crc_data        <=  0;
   end
   else begin
     //Strobes

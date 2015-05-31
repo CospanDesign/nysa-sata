@@ -199,34 +199,34 @@ assign  xmit_error              = ll_xmit_error;
 assign  ll_write_start          = (reg_write)   ? reg_write_start                : data_write_start;
 assign  ll_write_data           = (reg_write)   ? register_fis[register_fis_ptr] : data_write_data;
 assign  ll_write_size           = (reg_write)   ? reg_write_size                 : data_write_size;
-assign  ll_write_hold           = (reg_write)   ? 0                              : data_write_hold;
-assign  ll_write_abort          = (reg_write)   ? 0                              : data_write_abort;
-assign  cl_if_strobe            = (reg_write)   ? 0                              : (!send_data_fis_id && data_write_strobe);
+assign  ll_write_hold           = (reg_write)   ? 1'b0                           : data_write_hold;
+assign  ll_write_abort          = (reg_write)   ? 1'b0                           : data_write_abort;
+assign  cl_if_strobe            = (reg_write)   ? 1'b0                           : (!send_data_fis_id && data_write_strobe);
 
 //Read Control
-assign  ll_read_ready           = (reg_read)    ? 1                              : data_read_ready;
-assign  cl_of_strobe            = (reg_read)    ? 0                              : ((state == READ_DATA) && data_read_strobe);
+assign  ll_read_ready           = (reg_read)    ? 1'b1                           : data_read_ready;
+assign  cl_of_strobe            = (reg_read)    ? 1'b0                           : ((state == READ_DATA) && data_read_strobe);
 assign  cl_of_data              = ll_read_data;
 
 //Data Register Write Control Signals
 assign  data_write_data         = (send_data_fis_id)     ? `FIS_DATA                : cl_if_data;
                                                       //the first DWORD is the FIS ID
-assign  data_write_size         = (cl_if_size + 1);
+assign  data_write_size         = (cl_if_size + 32'h1);
 //assign  data_write_size         = cl_if_size;
                                                       //Add 1 to the size so that there is room for the FIS ID
 assign  data_write_strobe       = ll_write_strobe;
 assign  data_read_strobe        = ll_read_strobe;
-assign  data_write_hold         = 0;
+assign  data_write_hold         = 1'b0;
                                                    //There should never be a hold on the data becuase the CL will set it up
-assign  data_write_abort        = 0;
+assign  data_write_abort        = 1'b0;
 assign  read_crc_error          = !ll_read_crc_ok;
 
 
 //H2D Register Write control signals
 assign  reg_write_strobe        = ll_write_strobe;
 assign  reg_write_size          = `FIS_H2D_REG_SIZE;
-assign  reg_write_hold          = 0;
-assign  reg_write_abort         = 0;
+assign  reg_write_hold          = 1'b0;
+assign  reg_write_abort         = 1'b0;
 assign  reg_write               = (state == WRITE_H2D_REG)        || (send_command_stb || send_control_stb);
 
 //D2H Register Read control signals
@@ -424,13 +424,13 @@ always @ (posedge clk) begin
       CHECK_FIS_TYPE: begin
         if (detect_dma_setup) begin
 //XXX: Future work!
-          reg_read_count        <=  reg_read_count + 1;
+          reg_read_count        <=  reg_read_count + 8'h1;
           state                 <=  IDLE;
         end
         else if (detect_dma_activate) begin
           //hard drive is ready to receive data
           state                 <=  DMA_ACTIVATE;
-          reg_read_count        <=  reg_read_count + 1;
+          reg_read_count        <=  reg_read_count + 8'h1;
           //state                 <=  IDLE;
         end
         else if (detect_d2h_data) begin
@@ -445,7 +445,7 @@ always @ (posedge clk) begin
           d2h_port_mult         <=  ll_read_data[11:8];
 
           state                 <=  READ_D2H_REG;
-          reg_read_count        <=  reg_read_count + 1;
+          reg_read_count        <=  reg_read_count + 8'h1;
         end
         else if (detect_pio_setup) begin
           //store the error, status, direction interrupt from this read
@@ -458,7 +458,7 @@ always @ (posedge clk) begin
           d2h_port_mult         <=  ll_read_data[11:8];
 
           state                 <=  READ_PIO_SETUP;
-          reg_read_count        <=  reg_read_count + 1;
+          reg_read_count        <=  reg_read_count + 8'h1;
         end
         else if (detect_set_device_bits) begin
           //store the error, a subset of the status bit and the interrupt
@@ -480,7 +480,7 @@ always @ (posedge clk) begin
       WRITE_H2D_REG: begin
         if  (register_fis_ptr < `FIS_H2D_REG_SIZE) begin
           if (reg_write_strobe) begin
-            register_fis_ptr    <=  register_fis_ptr + 1;
+            register_fis_ptr    <=  register_fis_ptr + 8'h1;
           end
         end
         if (ll_write_finished) begin
@@ -517,7 +517,7 @@ always @ (posedge clk) begin
           end
         endcase
         if (reg_read_stb) begin
-          reg_read_count        <=  reg_read_count + 1;
+          reg_read_count        <=  reg_read_count + 8'h1;
         end
         if (ll_read_finished) begin
           d2h_reg_stb           <=  1;
@@ -544,7 +544,7 @@ always @ (posedge clk) begin
           end
         endcase
         if (reg_read_stb) begin
-          reg_read_count        <=  reg_read_count + 1;
+          reg_read_count        <=  reg_read_count + 8'h1;
         end
         if (ll_read_finished) begin
           pio_setup_stb         <=  1;

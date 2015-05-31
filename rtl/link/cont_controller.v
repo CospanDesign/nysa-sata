@@ -161,8 +161,8 @@ assign  cont_tx_isk   = (!xmit_cont_en) ? ll_tx_isk :
                         ((tx_prev_prim != ll_tx_din) && ll_tx_isk) ? ll_tx_isk ://if the prev != curr (exit)
                         (last_prim)      ?ll_tx_isk:  
                         (tx_cont_enable) ?                                      //if the cont is enabled
-                          send_cont ?   1 :                                     //need to first send the cont
-                                        0 :                                     //send the junk
+                          send_cont ?   1'b1 :                                  //need to first send the cont
+                                        1'b0 :                                  //send the junk
                                           ll_tx_isk;                            //tx cont is not enabled
 assign  scram_en      = tx_cont_enable;
 

@@ -179,7 +179,7 @@ reg                 single_write_prev;
 reg                 dma_send_data_stb;
 reg                 dma_act_detected;
 
-wire                write_data_available;
+//wire                write_data_available;
 reg                 first_write;
 reg                 first_read;
 
@@ -190,7 +190,7 @@ wire        [1:0]   if_write_ready;
 wire        [1:0]   if_write_activate;
 wire        [23:0]  if_write_size;
 wire                if_write_strobe;
-wire                if_starved;
+//wire                if_starved;
 wire        [31:0]  if_write_data;
 
 wire                if_read_strobe;
@@ -232,7 +232,8 @@ ppfifo # (
   .write_activate       (if_write_activate        ),
   .write_fifo_size      (if_write_size            ),
   .write_strobe         (if_write_strobe          ),
-  .starved              (if_starved               ),
+  //.starved              (if_starved               ),
+  .starved              (                         ),
 
   //read side
 //XXX: This can be different clocks
@@ -262,7 +263,8 @@ ppfifo # (
   .write_activate       (of_write_activate        ),
   .write_fifo_size      (of_write_size            ),
   .write_strobe         (of_write_strobe          ),
-  .starved              (out_fifo_starved         ),
+  //.starved              (out_fifo_starved         ),
+  .starved              (                         ),
 
   //read side
 //XXX: This can be different clocks
@@ -303,8 +305,8 @@ assign  if_write_data         = user_din;
 assign  if_write_strobe       = user_din_stb;
 assign  user_din_ready        = if_write_ready;
 assign  if_write_activate     = user_din_activate;
-//assign  user_din_size         = if_write_size;
-assign  user_din_size         = 24'h00800;
+assign  user_din_size         = if_write_size;
+//assign  user_din_size         = 24'h00800;
 //assign  user_din_size         = 24'h00400;
 //assign  user_din_size         = 24'h00200;
 
@@ -315,7 +317,7 @@ assign  user_dout_size        = of_read_size;
 assign  of_read_strobe        = user_dout_stb;
 
 
-assign  write_data_available  = (if_read_ready || if_read_activate) ||  (if_write_ready != 2'b11);
+//assign  write_data_available  = (if_read_ready || if_read_activate) ||  (if_write_ready != 2'b11);
 
 
 //Strobes
