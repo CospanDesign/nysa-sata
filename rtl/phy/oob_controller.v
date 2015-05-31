@@ -42,12 +42,12 @@ input               comm_init_detect, //detected an init
 input               comm_wake_detect, //detected a wake on the rx lines
 
 input       [31:0]  rx_din,
-input       [3:0]   rx_isk,
+input       [3:0]   rx_is_k,
 input               rx_is_elec_idle,
 input               phy_error,
 
 output  reg [31:0]  tx_dout,
-output  reg         tx_isk,
+output  reg         tx_is_k,
 output  reg         tx_set_elec_idle,
 output      [3:0]   lax_state
 
@@ -85,8 +85,8 @@ wire                sync_detected;
 //Submodules
 //Asynchronous Logic
 assign              timeout         = (timer == 0);
-assign              align_detected  = ((rx_isk > 0) && (rx_din == `PRIM_ALIGN) && !phy_error);
-assign              sync_detected   = ((rx_isk > 0) && (rx_din == `PRIM_SYNC));
+assign              align_detected  = ((rx_is_k > 0) && (rx_din == `PRIM_ALIGN) && !phy_error);
+assign              sync_detected   = ((rx_is_k > 0) && (rx_din == `PRIM_SYNC));
 assign              lax_state       = state;
 
 //Synchronous Logic
@@ -102,7 +102,7 @@ always @ (posedge clk) begin
     tx_comm_reset       <=  1;
     tx_comm_wake        <=  0;
     tx_dout             <=  0;
-    tx_isk              <=  0;
+    tx_is_k             <=  0;
     tx_set_elec_idle    <=  1;
     no_align_count      <=  0;
     platform_error      <=  0;
@@ -112,7 +112,7 @@ always @ (posedge clk) begin
     tx_comm_reset       <=  0;
     tx_comm_wake        <=  0;
 
-    tx_isk              <=  0;
+    tx_is_k             <=  0;
 
 
     //timer (when reache 0 timeout has occured)
@@ -221,7 +221,7 @@ always @ (posedge clk) begin
         tx_set_elec_idle    <=  0;
         //a sequence of 0's and 1's
         tx_dout             <=  `DIALTONE;
-        tx_isk              <=  0;
+        tx_is_k             <=  0;
         if (align_detected) begin
           //we got something from the device!
           timer             <=  0;
@@ -239,7 +239,7 @@ always @ (posedge clk) begin
       end
       SEND_ALIGN: begin
         tx_dout             <=  `PRIM_ALIGN;
-        tx_isk              <=  1;
+        tx_is_k             <=  1;
         if (!align_detected) begin
           $display ("oob_controller: detected ALIGN deasserted");
 //XXX: Groundhog detects the SYNC primitve before declaring linkup

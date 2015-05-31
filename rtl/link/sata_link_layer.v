@@ -42,10 +42,10 @@ module sata_link_layer (
 
 //XXX: I probably need some feedback to indicate that there is room to write
   output    [31:0]    tx_dout,
-  output              tx_isk,
+  output              tx_is_k,
 
   input     [31:0]    rx_din,
-  input     [3:0]     rx_isk,
+  input     [3:0]     rx_is_k,
 
   input               write_start,
   output              write_strobe,
@@ -122,20 +122,20 @@ reg                 send_pmnack;
 
 wire                sli_idle;
 wire      [31:0]    sli_tx_dout;
-wire                sli_tx_isk;
+wire                sli_tx_is_k;
 
 reg                 write_en;
 wire                write_idle;
 wire      [31:0]    slw_tx_dout;
-wire                slw_tx_isk;
+wire                slw_tx_is_k;
 
 reg                 read_en;
 wire                read_idle;
 wire      [31:0]    slr_tx_dout;
-wire                slr_tx_isk;
+wire                slr_tx_is_k;
 
 wire      [31:0]    ll_tx_dout;
-wire                ll_tx_isk;
+wire                ll_tx_is_k;
 
 wire                last_prim;
 
@@ -155,13 +155,13 @@ cont_controller ccon (
   .last_prim            (last_prim              ),
 
   .rx_din               (rx_din                 ),
-  .rx_isk               (rx_isk                 ),
+  .rx_is_k               (rx_is_k                 ),
 
   .ll_tx_din            (ll_tx_dout             ),
-  .ll_tx_isk            (ll_tx_isk              ),
+  .ll_tx_is_k            (ll_tx_is_k              ),
 
   .cont_tx_dout         (tx_dout                ),
-  .cont_tx_isk          (tx_isk                 ),
+  .cont_tx_is_k          (tx_is_k                 ),
 
   .detect_sync          (detect_sync            ),
   .detect_r_rdy         (detect_r_rdy           ),
@@ -216,9 +216,9 @@ sata_link_layer_write slw (
   .post_align_write     (post_align_write       ),
 
   .tx_dout              (slw_tx_dout            ),
-  .tx_isk               (slw_tx_isk             ),
+  .tx_is_k              (slw_tx_is_k            ),
   .rx_din               (rx_din                 ),
-  .rx_isk               (rx_isk                 ),
+  .rx_is_k              (rx_is_k                ),
 
   .xmit_error           (xmit_error             ),
   .wsize_z_error        (wsize_z_error          ),
@@ -255,9 +255,9 @@ sata_link_layer_read slr (
   .detect_xrdy_xrdy     (detect_xrdy_xrdy       ),
 
   .tx_dout              (slr_tx_dout            ),
-  .tx_isk               (slr_tx_isk             ),
+  .tx_is_k              (slr_tx_is_k            ),
   .rx_din               (rx_din                 ),
-  .rx_isk               (rx_isk                 ),
+  .rx_is_k              (rx_is_k                ),
 
   .read_ready           (read_ready             ),
   .read_strobe          (read_strobe            ),
@@ -275,14 +275,14 @@ sata_link_layer_read slr (
 
 //Asynchronous logic
 assign  ll_tx_dout = (!read_idle) ? slr_tx_dout  : (!write_idle) ? slw_tx_dout : sli_tx_dout;
-assign  ll_tx_isk  = (!read_idle) ? slr_tx_isk   : (!write_idle) ? slw_tx_isk  : sli_tx_isk;
+assign  ll_tx_is_k  = (!read_idle) ? slr_tx_is_k   : (!write_idle) ? slw_tx_is_k  : sli_tx_is_k;
 
 
 assign  sli_tx_dout   = (send_pmnack) ? `PRIM_PMNACK  :
                         (send_pmack)  ? `PRIM_PMACK :
                         `PRIM_SYNC;
 
-assign  sli_tx_isk    = 1;
+assign  sli_tx_is_k    = 1;
 
 assign  link_layer_ready  = (state == IDLE) && read_idle && write_idle;
 

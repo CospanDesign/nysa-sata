@@ -36,13 +36,13 @@ input               last_prim,
 
 
 input       [31:0]  ll_tx_din,
-input               ll_tx_isk,
+input               ll_tx_is_k,
 
 output      [31:0]  cont_tx_dout,
-output              cont_tx_isk,
+output              cont_tx_is_k,
 
 input       [31:0]  rx_din,
-input       [3:0]   rx_isk,
+input       [3:0]   rx_is_k,
 
 output              detect_sync,
 output              detect_r_rdy,
@@ -118,52 +118,52 @@ scrambler scram (
 );
 
 //Asynchronous Logic
-assign  detect_sync   = ((rx_isk[0])     && (rx_din == `PRIM_SYNC    )) ||  sync_cont;   //sync (normal) == sync(cont)
-assign  detect_r_rdy  = ((rx_isk[0])     && (rx_din == `PRIM_R_RDY   )) ||  r_rdy_cont;
-assign  detect_r_ip   = ((rx_isk[0])     && (rx_din == `PRIM_R_IP    )) ||  r_ip_cont;
-assign  detect_r_err  = ((rx_isk[0])     && (rx_din == `PRIM_R_ERR   )) ||  r_err_cont;
-assign  detect_r_ok   = ((rx_isk[0])     && (rx_din == `PRIM_R_OK    )) ||  r_ok_cont;
-assign  detect_x_rdy  = ((rx_isk[0])     && (rx_din == `PRIM_X_RDY   )) ||  x_rdy_cont;
-assign  detect_sof    = (rx_isk[0])      && (rx_din == `PRIM_SOF     );
-assign  detect_eof    = (rx_isk[0])      && (rx_din == `PRIM_EOF     );
-assign  detect_wtrm   = ((rx_isk[0])     && (rx_din == `PRIM_WTRM    )) ||  wtrm_cont;
-assign  detect_cont   = (rx_isk[0])      && (rx_din == `PRIM_CONT    );
-assign  detect_hold   = ((rx_isk[0])     && (rx_din == `PRIM_HOLD    )) ||  hold_cont;  //hold  (normal) == hold  (cont)
-assign  detect_holda  = ((rx_isk[0])     && (rx_din == `PRIM_HOLDA   )) ||  holda_cont; //holda (normal) == holda (cont)
-assign  detect_preq_s = ((rx_isk[0])     && (rx_din == `PRIM_PREQ_S  )) ||  pmreq_s_cont;
-assign  detect_preq_p = ((rx_isk[0])     && (rx_din == `PRIM_PREQ_P  )) ||  pmreq_p_cont;
-assign  detect_align  = (rx_isk[0])      && (rx_din == `PRIM_ALIGN   );
+assign  detect_sync   = ((rx_is_k[0])     && (rx_din == `PRIM_SYNC    )) ||  sync_cont;   //sync (normal) == sync(cont)
+assign  detect_r_rdy  = ((rx_is_k[0])     && (rx_din == `PRIM_R_RDY   )) ||  r_rdy_cont;
+assign  detect_r_ip   = ((rx_is_k[0])     && (rx_din == `PRIM_R_IP    )) ||  r_ip_cont;
+assign  detect_r_err  = ((rx_is_k[0])     && (rx_din == `PRIM_R_ERR   )) ||  r_err_cont;
+assign  detect_r_ok   = ((rx_is_k[0])     && (rx_din == `PRIM_R_OK    )) ||  r_ok_cont;
+assign  detect_x_rdy  = ((rx_is_k[0])     && (rx_din == `PRIM_X_RDY   )) ||  x_rdy_cont;
+assign  detect_sof    = (rx_is_k[0])      && (rx_din == `PRIM_SOF     );
+assign  detect_eof    = (rx_is_k[0])      && (rx_din == `PRIM_EOF     );
+assign  detect_wtrm   = ((rx_is_k[0])     && (rx_din == `PRIM_WTRM    )) ||  wtrm_cont;
+assign  detect_cont   = (rx_is_k[0])      && (rx_din == `PRIM_CONT    );
+assign  detect_hold   = ((rx_is_k[0])     && (rx_din == `PRIM_HOLD    )) ||  hold_cont;  //hold  (normal) == hold  (cont)
+assign  detect_holda  = ((rx_is_k[0])     && (rx_din == `PRIM_HOLDA   )) ||  holda_cont; //holda (normal) == holda (cont)
+assign  detect_preq_s = ((rx_is_k[0])     && (rx_din == `PRIM_PREQ_S  )) ||  pmreq_s_cont;
+assign  detect_preq_p = ((rx_is_k[0])     && (rx_din == `PRIM_PREQ_P  )) ||  pmreq_p_cont;
+assign  detect_align  = (rx_is_k[0])      && (rx_din == `PRIM_ALIGN   );
 
-assign  detect_xrdy_xrdy  = ((((rx_isk[0])&& (rx_din == `PRIM_X_RDY   )) ||  x_rdy_cont) && ll_tx_isk && (ll_tx_din == `PRIM_X_RDY));
+assign  detect_xrdy_xrdy  = ((((rx_is_k[0])&& (rx_din == `PRIM_X_RDY   )) ||  x_rdy_cont) && ll_tx_is_k && (ll_tx_din == `PRIM_X_RDY));
 
-assign  sync_cont     =   sync_cont_ready    && ((rx_din == `PRIM_CONT) || (!rx_isk[0] || detect_align));
-assign  hold_cont     =   hold_cont_ready    && ((rx_din == `PRIM_CONT) || (!rx_isk[0] || detect_align));
-assign  holda_cont    =   holda_cont_ready   && ((rx_din == `PRIM_CONT) || (!rx_isk[0] || detect_align));
-assign  pmreq_p_cont  =   pmreq_p_cont_ready && ((rx_din == `PRIM_CONT) || (!rx_isk[0] || detect_align));
-assign  pmreq_s_cont  =   pmreq_s_cont_ready && ((rx_din == `PRIM_CONT) || (!rx_isk[0] || detect_align));
-assign  r_err_cont    =   r_err_cont_ready   && ((rx_din == `PRIM_CONT) || (!rx_isk[0] || detect_align));
-assign  r_ip_cont     =   r_ip_cont_ready    && ((rx_din == `PRIM_CONT) || (!rx_isk[0] || detect_align));
-assign  r_ok_cont     =   r_ok_cont_ready    && ((rx_din == `PRIM_CONT) || (!rx_isk[0] || detect_align));
-assign  r_rdy_cont    =   r_rdy_cont_ready   && ((rx_din == `PRIM_CONT) || (!rx_isk[0] || detect_align));
-assign  wtrm_cont     =   wtrm_cont_ready    && ((rx_din == `PRIM_CONT) || (!rx_isk[0] || detect_align));
-assign  x_rdy_cont    =   x_rdy_cont_ready   && ((rx_din == `PRIM_CONT) || (!rx_isk[0] || detect_align));
+assign  sync_cont     =   sync_cont_ready    && ((rx_din == `PRIM_CONT) || (!rx_is_k[0] || detect_align));
+assign  hold_cont     =   hold_cont_ready    && ((rx_din == `PRIM_CONT) || (!rx_is_k[0] || detect_align));
+assign  holda_cont    =   holda_cont_ready   && ((rx_din == `PRIM_CONT) || (!rx_is_k[0] || detect_align));
+assign  pmreq_p_cont  =   pmreq_p_cont_ready && ((rx_din == `PRIM_CONT) || (!rx_is_k[0] || detect_align));
+assign  pmreq_s_cont  =   pmreq_s_cont_ready && ((rx_din == `PRIM_CONT) || (!rx_is_k[0] || detect_align));
+assign  r_err_cont    =   r_err_cont_ready   && ((rx_din == `PRIM_CONT) || (!rx_is_k[0] || detect_align));
+assign  r_ip_cont     =   r_ip_cont_ready    && ((rx_din == `PRIM_CONT) || (!rx_is_k[0] || detect_align));
+assign  r_ok_cont     =   r_ok_cont_ready    && ((rx_din == `PRIM_CONT) || (!rx_is_k[0] || detect_align));
+assign  r_rdy_cont    =   r_rdy_cont_ready   && ((rx_din == `PRIM_CONT) || (!rx_is_k[0] || detect_align));
+assign  wtrm_cont     =   wtrm_cont_ready    && ((rx_din == `PRIM_CONT) || (!rx_is_k[0] || detect_align));
+assign  x_rdy_cont    =   x_rdy_cont_ready   && ((rx_din == `PRIM_CONT) || (!rx_is_k[0] || detect_align));
 
 
 assign  cont_tx_dout  = (!xmit_cont_en) ? ll_tx_din :                           //when transmit cont gen is disable
-                      ((tx_prev_prim != ll_tx_din) && ll_tx_isk) ? ll_tx_din :  //if the prev != curr (exit)
+                      ((tx_prev_prim != ll_tx_din) && ll_tx_is_k) ? ll_tx_din :  //if the prev != curr (exit)
                         (last_prim)      ? ll_tx_din:
                         (tx_cont_enable) ?                                      //if the cont is enabled
                           send_cont ?   `PRIM_CONT  :                           //need to first send the cont
                                         scram_dout  :                           //send the junk
                                           ll_tx_din;                            //tx cont is not enabled
 
-assign  cont_tx_isk   = (!xmit_cont_en) ? ll_tx_isk :
-                        ((tx_prev_prim != ll_tx_din) && ll_tx_isk) ? ll_tx_isk ://if the prev != curr (exit)
-                        (last_prim)      ?ll_tx_isk:  
-                        (tx_cont_enable) ?                                      //if the cont is enabled
+assign  cont_tx_is_k   = (!xmit_cont_en) ? ll_tx_is_k :
+                         ((tx_prev_prim != ll_tx_din) && ll_tx_is_k) ? ll_tx_is_k ://if the prev != curr (exit)
+                         (last_prim)      ?ll_tx_is_k:
+                         (tx_cont_enable) ?                                      //if the cont is enabled
                           send_cont ?   1'b1 :                                  //need to first send the cont
                                         1'b0 :                                  //send the junk
-                                          ll_tx_isk;                            //tx cont is not enabled
+                                          ll_tx_is_k;                            //tx cont is not enabled
 assign  scram_en      = tx_cont_enable;
 
 //Synchronous logic
@@ -188,7 +188,7 @@ always @ (posedge clk) begin
   end
   else begin
     if (!detect_align) begin
-      if (rx_isk) begin
+      if (rx_is_k) begin
         if (rx_din == `PRIM_CONT) begin
           cont_detect                 <=  1;
         end
@@ -275,7 +275,7 @@ always @ (posedge clk) begin
 
         end
       end
-      if (!rx_isk[0] && !cont_detect) begin
+      if (!rx_is_k[0] && !cont_detect) begin
         cont_detect             <=  0;
         hold_cont_ready         <=  0;
         holda_cont_ready        <=  0;
@@ -307,7 +307,7 @@ always @ (posedge clk) begin
 
       send_cont               <=  0;
 
-      if (ll_tx_isk) begin
+      if (ll_tx_is_k) begin
 
         //reset everything because the previous primative is not equal to the current one
         if (tx_prev_prim != ll_tx_din) begin

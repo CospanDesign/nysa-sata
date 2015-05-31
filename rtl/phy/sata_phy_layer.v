@@ -35,14 +35,14 @@ output              platform_error,
 output              linkup,           //link is finished
 
 output  [31:0]      tx_dout,
-output              tx_isk,
+output              tx_is_k,
 output              tx_comm_reset,
 output              tx_comm_wake,
 output              tx_elec_idle,
 input               tx_oob_complete,
 
 input   [31:0]      rx_din,
-input   [3:0]       rx_isk,
+input   [3:0]       rx_is_k,
 input               rx_elec_idle,
 
 input               comm_init_detect,
@@ -65,11 +65,11 @@ reg         [7:0]   align_count;
 
 //OOB Control
 wire        [31:0]  oob_tx_dout;
-wire                oob_tx_isk;
+wire                oob_tx_is_k;
 
 //Phy Control
 wire        [31:0]  phy_tx_dout;
-wire                phy_tx_isk;
+wire                phy_tx_is_k;
 //wire                align_detected;
 wire                oob_platform_error;
 reg                 phy_platform_error;
@@ -87,14 +87,14 @@ oob_controller oob (
 
   //Platform Control
   .tx_dout            (oob_tx_dout        ),
-  .tx_isk             (oob_tx_isk         ),
+  .tx_is_k            (oob_tx_is_k        ),
   .tx_comm_reset      (tx_comm_reset      ),
   .tx_comm_wake       (tx_comm_wake       ),
   .tx_set_elec_idle   (tx_elec_idle       ),
   .tx_oob_complete    (tx_oob_complete    ),
 
   .rx_din             (rx_din             ),
-  .rx_isk             (rx_isk             ),
+  .rx_is_k            (rx_is_k            ),
   .comm_init_detect   (comm_init_detect   ),
   .comm_wake_detect   (comm_wake_detect   ),
   .rx_is_elec_idle    (rx_elec_idle       ),
@@ -104,12 +104,12 @@ oob_controller oob (
 
 //Asynchronous Logic
 assign              tx_dout         = !linkup ? oob_tx_dout : phy_tx_dout;
-assign              tx_isk          = !linkup ? oob_tx_isk  : phy_tx_isk;
+assign              tx_is_k          = !linkup ? oob_tx_is_k  : phy_tx_is_k;
 
 assign              phy_tx_dout     =  `PRIM_ALIGN;
-assign              phy_tx_isk      =  1;
+assign              phy_tx_is_k      =  1;
 
-//assign              align_detected  = ((rx_isk > 0) && (rx_din == `PRIM_ALIGN) && !phy_error);
+//assign              align_detected  = ((rx_is_k > 0) && (rx_din == `PRIM_ALIGN) && !phy_error);
 //assign              phy_ready       = ((state == READY) && (!align_detected));
 assign              phy_ready       = (state == READY);
 assign              platform_error  = oob_platform_error || phy_platform_error;

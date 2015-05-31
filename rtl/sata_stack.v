@@ -95,14 +95,14 @@ module sata_stack (
 //Buffer
 //Platform Interface
   output  [31:0]      tx_dout,
-  output              tx_isk,         //Connect All 4 'tx_isk'to this signal
+  output              tx_is_k,         //Connect All 4 'tx_is_k'to this signal
   output              tx_comm_reset,
   output              tx_comm_wake,
   output              tx_elec_idle,
   input               tx_oob_complete,
 
   input   [31:0]      rx_din,
-  input   [3:0]       rx_isk,
+  input   [3:0]       rx_is_k,
   input               rx_elec_idle,
   input               comm_init_detect,
   input               comm_wake_detect,
@@ -253,11 +253,11 @@ wire                ll_remote_abort;
 wire                ll_xmit_error;
 
 wire        [31:0]  ll_tx_dout;
-wire                ll_tx_isk;
+wire                ll_tx_is_k;
 
 //Phy Layer
 wire        [31:0]  phy_tx_dout;
-wire                phy_tx_isk;
+wire                phy_tx_is_k;
 
 //User Interface state machine
 
@@ -545,10 +545,10 @@ sata_link_layer sll(
   .phy_ready              (phy_ready              ),
   .platform_ready         (platform_ready         ),
   .tx_dout                (ll_tx_dout             ),
-  .tx_isk                 (ll_tx_isk              ),
+  .tx_is_k                (ll_tx_is_k             ),
 
   .rx_din                 (rx_din                 ),
-  .rx_isk                 (rx_isk                 ),
+  .rx_is_k                (rx_is_k                ),
   .is_device              (1'b0                   ),
 
 //Primative Detection
@@ -601,14 +601,14 @@ sata_phy_layer phy (
 
   //Platform Interface
   .tx_dout                (phy_tx_dout            ),
-  .tx_isk                 (phy_tx_isk             ),
+  .tx_is_k                (phy_tx_is_k            ),
   .tx_comm_reset          (tx_comm_reset          ),
   .tx_comm_wake           (tx_comm_wake           ),
   .tx_elec_idle           (tx_elec_idle           ),
   .tx_oob_complete        (tx_oob_complete        ),
 
   .rx_din                 (rx_din                 ),
-  .rx_isk                 (rx_isk                 ),
+  .rx_is_k                (rx_is_k                ),
   .comm_init_detect       (comm_init_detect       ),
   .comm_wake_detect       (comm_wake_detect       ),
   .rx_elec_idle           (rx_elec_idle           ),
@@ -624,7 +624,7 @@ sata_phy_layer phy (
 
 //control of data to the platform controller
 assign                tx_dout     = (phy_ready) ? ll_tx_dout  : phy_tx_dout;
-assign                tx_isk      = (phy_ready) ? ll_tx_isk   : phy_tx_isk;
+assign                tx_is_k      = (phy_ready) ? ll_tx_is_k   : phy_tx_is_k;
 
   //no activity on the stack
 

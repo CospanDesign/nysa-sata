@@ -31,12 +31,12 @@ input               clk,
 
 //Data Interface
 output      [31:0]  tx_dout,
-output      [3:0]   tx_isk,
+output      [3:0]   tx_is_k,
 output              tx_set_elec_idle,
 output              rx_byte_is_aligned,
 
 input       [31:0]  rx_din,
-input       [3:0]   rx_isk,
+input       [3:0]   rx_is_k,
 input               rx_is_elec_idle,
 
 input               comm_reset_detect,
@@ -143,10 +143,10 @@ input       [31:0]  hd_data_to_host
 //Parameters
 //Registers/Wires
 wire        [31:0]  phy_tx_dout;
-wire                phy_tx_isk;
+wire                phy_tx_is_k;
 
 wire        [31:0]  sll_tx_dout;
-wire                sll_tx_isk;
+wire                sll_tx_is_k;
 
 wire                ll_ready;
 wire                ll_write_start;
@@ -280,11 +280,11 @@ faux_sata_hd_phy hd_phy(
 
   //incomming/output data
   .tx_dout              (phy_tx_dout            ),
-  .tx_isk               (phy_tx_isk             ),
+  .tx_is_k              (phy_tx_is_k            ),
   .tx_set_elec_idle     (tx_set_elec_idle       ),
 
   .rx_din               (rx_din                 ),
-  .rx_isk               (rx_isk                 ),
+  .rx_is_k              (rx_is_k                ),
   .rx_is_elec_idle      (rx_is_elec_idle        ),
   .rx_byte_is_aligned   (rx_byte_is_aligned     ),
 
@@ -332,10 +332,10 @@ sata_link_layer fsll (
   .phy_ready            (phy_ready              ),
   .platform_ready       (hd_ready               ),
   .tx_dout              (sll_tx_dout            ),
-  .tx_isk               (sll_tx_isk             ),
+  .tx_is_k              (sll_tx_is_k            ),
 
   .rx_din               (rx_din                 ),
-  .rx_isk               (rx_isk                 ),
+  .rx_is_k              (rx_is_k                ),
   .is_device            (1                      )
 );
 
@@ -486,8 +486,8 @@ faux_hd_command_layer fcl(
 );
 
 assign                  tx_dout         = !phy_ready ? phy_tx_dout : sll_tx_dout;
-assign                  tx_isk[3:1]     =  3'b000;
-assign                  tx_isk[0]       = !phy_ready ? phy_tx_isk  : sll_tx_isk;
+assign                  tx_is_k[3:1]     =  3'b000;
+assign                  tx_is_k[0]       = !phy_ready ? phy_tx_is_k  : sll_tx_is_k;
 
 
 //Debug

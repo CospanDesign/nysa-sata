@@ -31,12 +31,12 @@ input               clk,
 
 //Data Interface
 output  reg [31:0]  tx_dout,
-output  reg         tx_isk,
+output  reg         tx_is_k,
 output  reg         tx_set_elec_idle,
 output  reg         rx_byte_is_aligned,
 
 input       [31:0]  rx_din,
-input       [3:0]   rx_isk,
+input       [3:0]   rx_is_k,
 input               rx_is_elec_idle,
 
 input               comm_reset_detect,
@@ -87,8 +87,8 @@ wire                timeout;
 //Asynchronous Logic
 
 assign              lax_state         = state;
-assign              align_detected    = ((rx_isk > 0) && (rx_din == `PRIM_ALIGN));
-assign              dialtone_detected = ((rx_isk == 0) && (rx_din == `DIALTONE));
+assign              align_detected    = ((rx_is_k > 0) && (rx_din == `PRIM_ALIGN));
+assign              dialtone_detected = ((rx_is_k == 0) && (rx_din == `DIALTONE));
 assign              timeout           = (timer == 0);
 assign              phy_ready         = (state == READY);
 
@@ -97,7 +97,7 @@ always @ (posedge clk) begin
   if (rst) begin
     state                   <=  IDLE;
     tx_dout                 <=  0;
-    tx_isk                  <=  0;
+    tx_is_k                 <=  0;
     tx_set_elec_idle        <=  1;
     timer                   <=  0;
     hd_ready                <=  0;
@@ -178,7 +178,7 @@ always @ (posedge clk) begin
         $display ("faul_sata_hd: send aligns");
         tx_set_elec_idle    <=  0;
         tx_dout             <=  `PRIM_ALIGN;
-        tx_isk              <=  1;
+        tx_is_k             <=  1;
         state               <=  WAIT_FOR_ALIGN;
         timer               <=  32'h`INITIALIZE_TIMEOUT;
         rx_byte_is_aligned  <=  1;
@@ -189,7 +189,7 @@ always @ (posedge clk) begin
           $display ("faux_sata_hd: detected ALIGN primitive from host");
           $display ("faux_sata_hd: Ready");
           tx_dout           <=  `PRIM_ALIGN;
-          tx_isk            <=  1;
+          tx_is_k           <=  1;
           timer             <=  0;
           state             <=  READY;
         end
@@ -201,7 +201,7 @@ always @ (posedge clk) begin
       READY: begin
         hd_ready            <=  1;
         rx_byte_is_aligned  <=  1;
-        tx_isk              <=  1;
+        tx_is_k             <=  1;
         tx_dout             <=  `PRIM_SYNC;
         if (align_count == 255) begin
           tx_dout           <=  `PRIM_ALIGN;
@@ -210,13 +210,13 @@ always @ (posedge clk) begin
       end
       SEND_FIRST_ALIGNMENT: begin
         rx_byte_is_aligned  <=  1;
-        tx_isk              <=  1;
+        tx_is_k             <=  1;
         tx_dout             <=  `PRIM_ALIGN;
         state               <=  SEND_SECOND_ALIGNMENT;
       end
       SEND_SECOND_ALIGNMENT: begin
         rx_byte_is_aligned  <=  1;
-        tx_isk              <=  1;
+        tx_is_k             <=  1;
         tx_dout             <=  `PRIM_ALIGN;
         state               <=  READY;
       end

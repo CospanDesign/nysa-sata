@@ -58,10 +58,10 @@ module sata_link_layer_write(
   output  reg         send_holda,
 
   output      [31:0]  tx_dout,
-  output              tx_isk,
+  output              tx_is_k,
 
   input       [31:0]  rx_din,
-  input       [3:0]   rx_isk,
+  input       [3:0]   rx_is_k,
 
   input               write_start,
   output  reg         write_strobe,
@@ -208,7 +208,7 @@ assign              tx_dout = (send_x_rdy)  ? `PRIM_X_RDY:
                               (send_sync)   ? `PRIM_SYNC:
                               bump_buffer[buffer_pos];
 
-assign              tx_isk  = ( send_x_rdy  ||
+assign              tx_is_k = ( send_x_rdy  ||
                                 send_sof    ||
                                 send_eof    ||
                                 send_wtrm   ||

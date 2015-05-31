@@ -61,13 +61,13 @@ input               single_rdwr
 reg     [31:0]      test_id = 0;
 
 wire    [31:0]      tx_dout;
-wire                tx_isk;
+wire                tx_is_k;
 wire                tx_comm_reset;
 wire                tx_comm_wake;
 wire                tx_elec_idle;
 
 wire    [31:0]      rx_din;
-wire    [3:0]       rx_isk;
+wire    [3:0]       rx_is_k;
 wire                rx_elec_idle;
 wire                comm_init_detect;
 wire                comm_wake_detect;
@@ -91,10 +91,10 @@ reg                 r_h2u_read_enable;
 
 wire                hd_read_from_host;
 wire        [31:0]  hd_data_from_host;
-                                     
-                                     
+
+
 wire                hd_write_to_host;
-wire        [31:0]  hd_data_to_host;  
+wire        [31:0]  hd_data_to_host;
 
 wire        [31:0]  user_dout;
 wire                user_dout_ready;
@@ -234,14 +234,14 @@ sata_stack ss (
   .phy_ready             (phy_ready            ),
 
   .tx_dout               (tx_dout              ),
-  .tx_isk                (tx_isk               ),
+  .tx_is_k               (tx_is_k              ),
   .tx_comm_reset         (tx_comm_reset        ),
   .tx_comm_wake          (tx_comm_wake         ),
   .tx_elec_idle          (tx_elec_idle         ),
   .tx_oob_complete       (1'b0                 ),
 
   .rx_din                (rx_din               ),
-  .rx_isk                (rx_isk               ),
+  .rx_is_k               (rx_is_k              ),
   .rx_elec_idle          (rx_elec_idle         ),
   .comm_init_detect      (comm_init_detect     ),
   .comm_wake_detect      (comm_wake_detect     ),
@@ -255,10 +255,10 @@ faux_sata_hd  fshd   (
   .rst                   (r_rst                ),
   .clk                   (clk                  ),
   .tx_dout               (rx_din               ),
-  .tx_isk                (rx_isk               ),
+  .tx_is_k               (rx_is_k              ),
 
   .rx_din                (tx_dout              ),
-  .rx_isk                ({3'b000, tx_isk}     ),
+  .rx_is_k               ({3'b000, tx_is_k}    ),
   .rx_is_elec_idle       (tx_elec_idle         ),
 
   .comm_reset_detect     (tx_comm_reset        ),

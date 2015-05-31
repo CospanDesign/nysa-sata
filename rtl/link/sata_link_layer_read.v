@@ -49,10 +49,10 @@ module sata_link_layer_read (
   input               detect_xrdy_xrdy,
 
   output      [31:0]  tx_dout,
-  output              tx_isk,
+  output              tx_is_k,
 
   input       [31:0]  rx_din,
-  input       [3:0]   rx_isk,
+  input       [3:0]   rx_is_k,
 
   output  reg         read_strobe,
   output  reg  [31:0] read_data,
@@ -140,7 +140,7 @@ assign              tx_dout = (send_r_rdy)  ? `PRIM_R_RDY :
                               (send_holda)  ? `PRIM_HOLDA :
                               `PRIM_SYNC;
 
-assign              tx_isk  = ( send_r_rdy  ||
+assign              tx_is_k  = ( send_r_rdy  ||
                                 send_r_ip   ||
                                 send_r_err  ||
                                 send_r_ok   ||
@@ -153,7 +153,7 @@ assign              crc_din       = (data_scrambler_en) ? descr_dout : rx_din;
 assign              read_finished = detect_eof;
 assign              read_start    = detect_sof;
 assign              data_valid    = (state == READ) &&
-                                    (rx_isk == 0)   &&
+                                    (rx_is_k == 0)   &&
                                     (!detect_hold)  &&
                                     (!detect_holda) &&
                                     (!detect_align);
