@@ -91,11 +91,7 @@ reg                 send_sync;
 
 //CRC
 //XXX: Tie the CRC_EN to an incomming data dword
-wire                crc_en;
 wire      [31:0]    crc_din;
-wire      [31:0]    crc_dout;
-reg                 crc_data;
-reg                 crc_check;
 
 reg       [31:0]    prev_crc;
 reg       [31:0]    prev_data;
@@ -110,14 +106,6 @@ wire      [31:0]    descr_din;
 wire      [31:0]    descr_dout;
 
 //SubModules
-crc c (
-  .rst            (rst      || idle ),
-  .clk            (clk              ),
-  .en             (crc_en           ),
-  .din            (crc_din          ),
-  .dout           (crc_dout         )
-);
-
 scrambler descr (
   .rst            (rst      ||  idle),
   .clk            (clk              ),
@@ -158,7 +146,6 @@ assign              data_valid    = (state == READ) &&
                                     (!detect_holda) &&
                                     (!detect_align);
 
-assign              crc_en        = data_valid;
 assign              descr_en      = (data_scrambler_en && (detect_sof || data_valid));
 assign              descr_din     = (data_valid) ? rx_din : 32'h00000000;
 //assign              crc_ok        = (prev_data == prev_crc);

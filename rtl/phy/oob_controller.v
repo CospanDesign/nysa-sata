@@ -117,7 +117,7 @@ always @ (posedge clk) begin
 
     //timer (when reache 0 timeout has occured)
     if (timer > 0) begin
-      timer                 <=  timer - 1;
+      timer                 <=  timer - 32'h00000001;
     end
 
     //main state machine, if this reaches ready an initialization sequence has completed
@@ -248,7 +248,7 @@ always @ (posedge clk) begin
             state           <=  READY;
           end
           else begin
-            no_align_count  <=  no_align_count + 1;
+            no_align_count  <=  no_align_count + 2'b01;
           end
         end
       end

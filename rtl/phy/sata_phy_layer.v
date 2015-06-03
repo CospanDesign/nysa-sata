@@ -123,7 +123,7 @@ always @ (posedge clk) begin
   end
   else begin
     if (state == READY) begin
-      align_count       <=  align_count + 1;
+      align_count       <=  align_count + 8'h01;
     end
     case (state)
       NOT_READY:  begin

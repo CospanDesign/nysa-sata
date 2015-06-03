@@ -258,7 +258,7 @@ always @ (posedge clk) begin
         if (write_start) begin
           //add an extra space for the CRC
           write_strobe    <=  1;
-          data_size       <=  write_size;
+          data_size       <=  write_size[23:0];
           scr_en          <=  1;
           scr_din         <=  0;
           fstate          <=  FIRST_DATA;
@@ -273,7 +273,7 @@ always @ (posedge clk) begin
       end
       ENQUEUE: begin
         if (data_size == 1) begin
-          in_data_addra   <=  in_data_addra + 1;
+          in_data_addra   <=  in_data_addra + 24'h1;
           wr_en           <=  1;
           scr_en          <=  1;
           scr_din         <=  crc_dout;
@@ -286,7 +286,7 @@ always @ (posedge clk) begin
             write_strobe    <=  1;
             wr_en           <=  1;
             scr_en          <=  1;
-            in_data_addra   <=  in_data_addra + 1;
+            in_data_addra   <=  in_data_addra + 24'h1;
             scr_din         <=  write_data;
           end
           else begin
@@ -294,7 +294,7 @@ always @ (posedge clk) begin
             //in_data_addra   <=  in_data_addra + 1;
             wr_en           <=  1;
             scr_en          <=  1;
-            in_data_addra   <=  in_data_addra + 1;
+            in_data_addra   <=  in_data_addra + 24'h1;
             scr_din         <=  crc_dout;
             fstate          <=  WRITE_CRC;
           end
@@ -336,7 +336,7 @@ always @ (posedge clk) begin
   else begin
 
     if (dhold_delay_cnt < `DHOLD_DELAY) begin
-      dhold_delay_cnt <=  dhold_delay_cnt + 1;
+      dhold_delay_cnt <=  dhold_delay_cnt + 4'h1;
     end
     else begin
       dhold_delay   <=  1;
@@ -418,7 +418,7 @@ always @ (posedge clk) begin
 `endif
 
     if (min_holda_count < `MIN_HOLDA_TIMEOUT) begin
-      min_holda_count <=  min_holda_count + 1;
+      min_holda_count <=  min_holda_count + 4'h1;
     end
 
     if (phy_ready) begin
@@ -456,7 +456,7 @@ always @ (posedge clk) begin
             state         <=  WRITE;
             send_sof      <=  1;
             //bump_buffer[buffer_pos]      <=  rd_dout;
-            write_count   <=  write_count + 1;
+            write_count   <=  write_count + 13'h1;
             //Send First Read
             //read the first packet of data
           end
@@ -468,7 +468,7 @@ always @ (posedge clk) begin
       WRITE: begin
         if (!write_ready) begin
           if (neg_phy_ready && (buffer_pos == 0)) begin
-            buffer_pos        <=  buffer_pos + 1;
+            buffer_pos        <=  buffer_pos + 4'h1;
           end
 
 `ifdef DHOLD_DELAY_EN
@@ -493,13 +493,13 @@ always @ (posedge clk) begin
         else begin
           if (write_count <= data_size + 1) begin
             if (buffer_pos > 0) begin
-              buffer_pos      <=  buffer_pos - 1;
+              buffer_pos      <=  buffer_pos - 4'h1;
               if (buffer_pos == 1) begin
-                write_count   <=  write_count + 1;
+                write_count   <=  write_count + 13'h1;
               end
             end
             else begin
-              write_count     <=  write_count + 1;
+              write_count     <=  write_count + 13'h1;
             end
           end
           else begin
@@ -516,7 +516,7 @@ always @ (posedge clk) begin
 `endif
           min_holda_count         <=  0;
 //XXX: I may need this to capture holds at the end of a trnasfer
-          buffer_pos              <=  buffer_pos + 1;
+          buffer_pos              <=  buffer_pos + 4'h1;
           send_holda              <=  1;
         end
       end
