@@ -294,7 +294,7 @@ always @ (posedge write_clock) begin
     w_reset_timeout <=  0;
   end
   else begin
-    if (w_reset && (w_reset_timeout < 4)) begin
+    if (w_reset && (w_reset_timeout < 5'h4)) begin
       w_reset_timeout <=  w_reset_timeout + 5'h1;
     end
     else begin
@@ -367,12 +367,12 @@ always @ (posedge write_clock) begin
   end
   else begin
     if (write_activate > 0 && write_strobe) begin
-      write_address <=  write_address + {{(ADDRESS_WIDTH - 1){1'b0}}, 1'b1};
+      write_address <=  write_address + 1;
       if (write_activate[0]) begin
-        w_count[0]  <=  w_count[0] + 24'b1;
+        w_count[0]  <=  w_count[0] + 1;
       end
       if (write_activate[1]) begin
-        w_count[1]  <=  w_count[1] + 24'b1;
+        w_count[1]  <=  w_count[1] + 1;
       end
     end
     if (write_activate == 0) begin
@@ -520,7 +520,7 @@ always @ (posedge read_clock) begin
       //XXX: There should be a better way to handle these edge conditions
       if (!r_activate && r_pre_read_wait) begin
         r_read_data                     <=  w_read_data;
-        r_address                       <=  r_address + {{(ADDRESS_WIDTH - 1){1'b0}}, 1'b1};
+        r_address                       <=  r_address + 1;
         r_activate                      <=  r_pre_activate;
         r_pre_activate                  <=  0;
       end
@@ -531,7 +531,7 @@ always @ (posedge read_clock) begin
       if (read_strobe && (r_address < (r_size[r_rselect] + 1))) begin
         //Increment the address
         r_read_data                     <=  w_read_data;
-        r_address                       <=  r_address + {{(ADDRESS_WIDTH - 1){1'b0}}, 1'b1};
+        r_address                       <=  r_address + 1;
       end
       if (r_pre_strobe && !read_strobe) begin
         r_read_data                     <=  w_read_data;
