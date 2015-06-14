@@ -33,7 +33,8 @@ module sata_stack (
   input               data_out_clk_valid,
 
   input               platform_ready,   //the underlying physical platform is
-  output              platform_error,   //Underlying platform errored out, the clock is misaligned, stack should
+  output              platform_error,   //Underlying platform errored out, the
+                                        //clock is misaligned, stack should
                                         //probably be reset
   output              linkup,           //link is finished
 
@@ -66,6 +67,7 @@ module sata_stack (
   output              dma_setup_stb,
   output              set_device_bits_stb,
 
+  output  [7:0]       d2h_fis,
   output              d2h_interrupt,
   output              d2h_notification,
   output  [3:0]       d2h_port_mult,
@@ -99,13 +101,14 @@ module sata_stack (
   output              tx_comm_reset,
   output              tx_comm_wake,
   output              tx_elec_idle,
-  input               tx_oob_complete,
 
   input   [31:0]      rx_din,
   input   [3:0]       rx_is_k,
   input               rx_elec_idle,
+  input               rx_byte_is_aligned,
   input               comm_init_detect,
   input               comm_wake_detect,
+  input               tx_oob_complete,
   input               phy_error,
 
 //Debug
@@ -183,7 +186,7 @@ module sata_stack (
   output              dbg_ll_send_crc,
 
 //Phy Layer
-  output  [3:0]       lax_state,
+  output  [3:0]       oob_state,
 
 //Primative Detection
   output              dbg_detect_sync,
@@ -461,6 +464,7 @@ sata_transport_layer stl (
   .h2d_sector_count       (h2d_sector_count       ),
 
   //Device to Host Register Values
+  .d2h_fis                (d2h_fis                ),
   .d2h_interrupt          (d2h_interrupt          ),
   .d2h_notification       (d2h_notification       ),
   .d2h_port_mult          (d2h_port_mult          ),
@@ -612,9 +616,10 @@ sata_phy_layer phy (
   .comm_init_detect       (comm_init_detect       ),
   .comm_wake_detect       (comm_wake_detect       ),
   .rx_elec_idle           (rx_elec_idle           ),
+  .rx_byte_is_aligned     (rx_byte_is_aligned     ),
   .phy_error              (phy_error              ),
 
-  .lax_state              (lax_state              ),
+  .lax_state              (oob_state              ),
   .phy_ready              (phy_ready              )
 );
 

@@ -44,6 +44,7 @@ input               tx_oob_complete,
 input   [31:0]      rx_din,
 input   [3:0]       rx_is_k,
 input               rx_elec_idle,
+input               rx_byte_is_aligned,
 
 input               comm_init_detect,
 input               comm_wake_detect,
@@ -98,6 +99,7 @@ oob_controller oob (
   .comm_init_detect   (comm_init_detect   ),
   .comm_wake_detect   (comm_wake_detect   ),
   .rx_is_elec_idle    (rx_elec_idle       ),
+  .rx_byte_is_aligned (rx_byte_is_aligned ),
   .lax_state          (lax_state          )
 
 );

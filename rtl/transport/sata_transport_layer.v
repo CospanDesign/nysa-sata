@@ -66,6 +66,7 @@ module sata_transport_layer (
   input       [15:0]  h2d_sector_count,
 
 //Device to Host Registers
+  output  reg [7:0]   d2h_fis,
   output  reg         d2h_interrupt,
   output  reg         d2h_notification,
   output  reg [3:0]   d2h_port_mult,
@@ -136,9 +137,9 @@ parameter           READ_DATA             = 4'h9;
 
 //Registers/Wires
 reg         [3:0]   fis_id_state;
+reg         [7:0]   current_fis;
 reg         [3:0]   state;
 reg                 detect_fis;
-reg         [7:0]   current_fis;
 wire                processing_fis;
 
 //data direction
@@ -258,41 +259,43 @@ assign  register_fis[4]         = {32'h00000000};
 //FIS ID State machine
 always @ (posedge clk) begin
   if (rst) begin
-    fis_id_state            <=  IDLE;
-    detect_fis              <=  0;
-    current_fis             <=  0;
+    fis_id_state                <=  IDLE;
+    detect_fis                  <=  0;
+    current_fis                 <=  0;
+    d2h_fis                     <=  0;
   end
   else begin
     //in order to set all the detect_* high when the actual fis is detected send this strobe
     if(ll_read_finished) begin
-      current_fis           <=  0;
-      fis_id_state          <=  IDLE;
+      current_fis               <=  0;
+      fis_id_state              <=  IDLE;
     end
     else begin
       case (fis_id_state)
         IDLE: begin
-          current_fis         <=  0;
-          detect_fis          <=  0;
+          current_fis           <=  0;
+          detect_fis            <=  0;
           if (ll_read_start) begin
-            detect_fis        <=  1;
-            fis_id_state      <=  READ_FIS;
+            detect_fis          <=  1;
+            fis_id_state        <=  READ_FIS;
           end
         end
         READ_FIS: begin
           if (ll_read_strobe) begin
-            detect_fis        <=  0;
+            detect_fis          <=  0;
             current_fis         <=  ll_read_data[7:0];
+            d2h_fis             <=  ll_read_data[7:0];
             fis_id_state        <=  WAIT_FOR_END;
           end
         end
         WAIT_FOR_END: begin
           if (ll_read_finished) begin
-            current_fis       <=  0;
-            fis_id_state      <=  IDLE;
+            current_fis         <=  0;
+            fis_id_state        <=  IDLE;
           end
         end
         default: begin
-          fis_id_state        <=  IDLE;
+          fis_id_state          <=  IDLE;
         end
       endcase
     end

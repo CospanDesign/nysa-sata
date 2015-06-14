@@ -303,11 +303,11 @@ faux_sata_hd_phy hd_phy(
 sata_link_layer fsll (
   .rst                  (rst || !hd_ready       ),
   .clk                  (clk                    ),
-  .prim_scrambler_en    (1                      ),
+  .prim_scrambler_en    (1'b1                   ),
   .data_scrambler_en    (data_scrambler_en      ),
 
   .link_layer_ready     (ll_ready               ),
-  .sync_escape          (0                      ),
+  .sync_escape          (1'b0                   ),
   .hold                 (dbg_hold               ),
 
   //Transport Layer Interface
@@ -336,7 +336,7 @@ sata_link_layer fsll (
 
   .rx_din               (rx_din                 ),
   .rx_is_k              (rx_is_k                ),
-  .is_device            (1                      )
+  .is_device            (1'b1                   )
 );
 
 faux_sata_hd_transport  ftl (

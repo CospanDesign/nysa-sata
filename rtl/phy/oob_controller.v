@@ -44,6 +44,7 @@ input               comm_wake_detect, //detected a wake on the rx lines
 input       [31:0]  rx_din,
 input       [3:0]   rx_is_k,
 input               rx_is_elec_idle,
+input               rx_byte_is_aligned,
 input               phy_error,
 
 output  reg [31:0]  tx_dout,
@@ -67,15 +68,17 @@ parameter           WAIT_FOR_CONFIGURE_END  = 4'h4;
 parameter           SEND_WAKE               = 4'h5;
 parameter           WAIT_FOR_WAKE           = 4'h6;
 parameter           WAIT_FOR_NO_WAKE        = 4'h7;
-parameter           WAIT_FOR_ALIGN          = 4'h8;
-parameter           SEND_ALIGN              = 4'h9;
-parameter           DETECT_SYNC             = 4'hA;
-parameter           READY                   = 4'hB;
+parameter           WAIT_FOR_IDLE           = 4'h8;
+parameter           WAIT_FOR_ALIGN          = 4'h9;
+parameter           SEND_ALIGN              = 4'hA;
+parameter           DETECT_SYNC             = 4'hB;
+parameter           READY                   = 4'hC;
 
 //Registers/Wires
 reg         [3:0]   state;
 reg         [31:0]  timer;
 reg         [1:0]   no_align_count;
+reg         [3:0]   retries;
 
 //timer used to send 'INITs', WAKEs' and read them
 wire                timeout;
@@ -85,7 +88,9 @@ wire                sync_detected;
 //Submodules
 //Asynchronous Logic
 assign              timeout         = (timer == 0);
-assign              align_detected  = ((rx_is_k > 0) && (rx_din == `PRIM_ALIGN) && !phy_error);
+//assign              align_detected  = ((rx_is_k > 0) && (rx_din == `PRIM_ALIGN) && !phy_error);
+//assign              align_detected  = ((rx_is_k > 0) && (rx_din == `PRIM_ALIGN));
+assign              align_detected  = ((rx_is_k > 0) && (rx_din == `PRIM_ALIGN) && rx_byte_is_aligned);
 assign              sync_detected   = ((rx_is_k > 0) && (rx_din == `PRIM_SYNC));
 assign              lax_state       = state;
 
@@ -99,13 +104,14 @@ always @ (posedge clk) begin
     state               <=  IDLE;
     linkup              <=  0;
     timer               <=  0;
-    tx_comm_reset       <=  1;
+    tx_comm_reset       <=  0;
     tx_comm_wake        <=  0;
     tx_dout             <=  0;
     tx_is_k             <=  0;
     tx_set_elec_idle    <=  1;
     no_align_count      <=  0;
     platform_error      <=  0;
+    retries             <=  0;
   end
   else begin
     //to support strobes, continuously reset the following signals
@@ -117,7 +123,7 @@ always @ (posedge clk) begin
 
     //timer (when reache 0 timeout has occured)
     if (timer > 0) begin
-      timer                 <=  timer - 32'h00000001;
+      timer                 <=  timer - 1;
     end
 
     //main state machine, if this reaches ready an initialization sequence has completed
@@ -133,6 +139,7 @@ always @ (posedge clk) begin
           //  DCM has generated the correct clocks
           timer             <=  32'h000000A2;
           state             <=  SEND_RESET;
+          tx_comm_reset     <=  1;
         end
       end
       SEND_RESET: begin
@@ -141,9 +148,8 @@ always @ (posedge clk) begin
         //SATA hard drive, or reset it so that it can be initiated to state
 
         //strobe the comm init so that the platform will send an INIT OOB signal
-        tx_comm_reset       <=  1;
         if (timeout || tx_oob_complete) begin
-          timer               <=  32'd`INITIALIZE_TIMEOUT;
+          timer               <=  `INITIALIZE_TIMEOUT;
           state               <=  WAIT_FOR_INIT;
           $display ("oob_controller: wait for INIT");
         end
@@ -153,18 +159,19 @@ always @ (posedge clk) begin
         //go back to the SEND_RESET state
         if (comm_init_detect) begin
           //HD said 'sup' go to a wake
-          timer             <=  0;
+          //timer             <=  0;
+          timer             <=  32'h00001000;
           state             <=  WAIT_FOR_NO_INIT;
           $display ("oob_controller: wait for INIT to go low");
         end
-        if (timeout || tx_oob_complete) begin
+        if (timeout) begin
           $display ("oob_controller: timed out while waiting for INIT");
           state             <=  IDLE;
         end
       end
       WAIT_FOR_NO_INIT: begin
         //wait for the init signal to go low from the device
-        if (!comm_init_detect) begin
+        if (!comm_init_detect && timeout) begin
           $display ("oob_controller: INIT deasserted");
           $display ("oob_controller: start configuration");
           state             <=  WAIT_FOR_CONFIGURE_END;
@@ -174,12 +181,12 @@ always @ (posedge clk) begin
           $display ("oob_controller: System is configured");
           state             <=  SEND_WAKE;
           timer             <=  32'h0000009B;
+          tx_comm_wake      <=  1;
         //end
       end
       SEND_WAKE:  begin
 //XXX: In the groundhog COMM WAKE was continuously send for a long period of time
         //Send the WAKE sequence to the hard drive to initiate a wakeup sequence
-        tx_comm_wake        <=  1;
 //XXX: Is this timeout correct?
         //880uS
         if (timeout || tx_oob_complete) begin
@@ -210,10 +217,30 @@ always @ (posedge clk) begin
           $display ("oob_controller: detected WAKE deasserted");
           $display ("oob_controller: Send Dialtone, wait for ALIGN");
 //Going to add more timeout
-          timer             <=  32'h203AD;
-          state             <=  WAIT_FOR_ALIGN;
+          //timer           <=  32'h0203AD;
+          timer           <=  32'h0203AD;
+          state           <=  WAIT_FOR_ALIGN;
+          //state           <=  WAIT_FOR_IDLE;
+          retries         <=  4;
         end
       end
+      /*
+      WAIT_FOR_IDLE: begin
+        if (!rx_is_elec_idle) begin
+          state           <=  WAIT_FOR_ALIGN;
+          timer           <=  32'h0101D0;
+        end
+        else if (timeout) begin
+          if (retries > 0) begin
+            timer         <=  32'h0203AD;
+            retries       <=  retries - 1;
+          end
+          if (retries == 0) begin
+            state         <= IDLE;
+          end
+        end
+      end
+      */
       WAIT_FOR_ALIGN: begin
         //transmit the 'dialtone' continuously
         //since we need to start sending actual data (not OOB signals, get out
@@ -231,7 +258,7 @@ always @ (posedge clk) begin
           $display ("oob_controller: ALIGN detected");
           $display ("oob_controller: Send out my ALIGNs");
         end
-        if (timeout || tx_oob_complete) begin
+        if (timeout) begin
           //didn't read an align in time :( reset
           $display ("oob_controller: timed out while waiting for AIGN");
           state             <=  IDLE;
@@ -259,9 +286,11 @@ always @ (posedge clk) begin
       end
       READY:  begin
         linkup              <=  1;
+        /*
         if (phy_error) begin
           platform_error    <=  1;
         end
+        */
         if (comm_init_detect) begin
           state             <=  IDLE;
         end
