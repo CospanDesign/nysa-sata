@@ -43,9 +43,8 @@ module sata_command_layer (
   input       [15:0]  user_features,
 
 //XXX: New Stb
-  input               write_data_en,
-  input               single_rdwr,
-  input               read_data_en,
+  input               write_data_stb,
+  input               read_data_stb,
   output              hard_drive_error,
 
   input               send_user_command_stb,
@@ -158,7 +157,6 @@ reg         [7:0]   status;
 wire                idle;
 reg                 cntrl_send_data_stb;
 reg                 send_command_stb;
-reg                 prev_send_command;
 
 wire                dev_busy;
 wire                dev_data_req;
@@ -168,21 +166,14 @@ wire                reset_timeout;
 
 //Read State Machine
 reg         [3:0]   read_state;
-reg                 read_data_stb;
-reg                 single_read_prev;
 
 //Write State Machine
 reg         [3:0]   write_state;
-reg                 write_data_stb;
-reg                 single_write_prev;
 
 reg                 dma_send_data_stb;
 reg                 dma_act_detected;
 
 //wire                write_data_available;
-reg                 first_write;
-reg                 first_read;
-
 reg                 enable_tl_data_ready;
 
 //Ping Pong FIFOs
@@ -321,7 +312,7 @@ assign  of_read_strobe        = user_dout_stb;
 
 
 //Strobes
-assign  t_send_command_stb    = read_data_stb ||  write_data_stb  || send_command_stb;
+assign  t_send_command_stb    = read_data_stb ||  write_data_stb  || send_user_command_stb;
 assign  t_send_data_stb       = dma_send_data_stb ||cntrl_send_data_stb;
 
 //IDLE
@@ -332,15 +323,13 @@ assign  idle                  = (cntrl_state  == IDLE) &&
 
 assign  command_layer_ready   = idle & reset_timeout;
 
-assign  h2d_command           = (write_data_en)   ?        `COMMAND_DMA_WRITE_EX    :
-                                (read_data_en)    ?        `COMMAND_DMA_READ_EX     :
-                                (send_user_command_stb) ? hard_drive_command        :
+assign  h2d_command           = write_data_stb        ? `COMMAND_DMA_WRITE_EX:
+                                read_data_stb         ? `COMMAND_DMA_READ_EX :
+                                send_user_command_stb ? hard_drive_command   :
                                 h2d_command;
 
 assign  h2d_sector_count      = sector_count;
-assign  h2d_lba               = (write_data_en) ? (!single_rdwr && !first_write)  ?   d2h_lba + 1 : sector_address :
-                                (read_data_en)  ? (!single_rdwr && !first_read)   ?   d2h_lba + 1 : sector_address :
-                                sector_address;
+assign  h2d_lba               = sector_address;
 
 //XXX: The individual bits should be controlled directly
 assign  h2d_control           = {5'h00, srst, 2'b00};
@@ -375,9 +364,6 @@ always @ (posedge clk) begin
     pio_data_ready                <=  0;
     status                        <=  0;
 
-    prev_send_command             <=  0;
-    send_command_stb              <=  0;
-
     reset_count                   <=  0;
     sata_busy                     <=  1;
   end
@@ -385,41 +371,31 @@ always @ (posedge clk) begin
     t_send_control_stb            <=  0;
     cntrl_send_data_stb           <=  0;
     pio_data_ready                <=  0;
-    send_command_stb              <=  0;
-
     //Reset Count
     if (reset_count < `RESET_TIMEOUT) begin
       reset_count                 <=  reset_count + 1;
     end
+
     if (!reset_timeout) begin
       cntrl_state                 <=  IDLE;
-    end
-
-    //detected the first a user attempting to send a command
-    if (send_user_command_stb && !prev_send_command) begin
-      prev_send_command           <=  1;
-      send_command_stb            <=  1;
-    end
-    if (!send_user_command_stb) begin
-      prev_send_command           <=  0;
     end
 
     if (t_d2h_reg_stb) begin
       sata_busy                   <=  0;
       h2d_features                <=  `D2H_REG_FEATURES;
     end
-    if (t_send_command_stb || t_send_control_stb || send_user_command_stb) begin
+    if (t_send_command_stb || t_send_control_stb) begin
       sata_busy                   <=  1;
-      if (send_user_command_stb) begin
-        h2d_features              <=  user_features;
-      end
+    end
+    if (send_user_command_stb) begin
+      h2d_features              <=  user_features;
     end
 
     case (cntrl_state)
       IDLE: begin
 
         //Soft Reset will break out of any flow
-        if ((command_layer_reset) && !srst) begin
+        if (command_layer_reset && !srst) begin
           srst                  <=  1;
           t_send_control_stb    <=  1;
           reset_count           <=  0;
@@ -487,47 +463,23 @@ always @ (posedge clk) begin
   if (rst || (!linkup)) begin
     read_state                    <=  IDLE;
     sync_escape                   <=  0;
-    read_data_stb                 <=  0;
-    single_read_prev              <=  0;
-    first_read                    <=  1;
   end
   else begin
-    read_data_stb                 <=  0;
     sync_escape                   <=  0;
-
-    if (!read_data_en) begin
-      single_read_prev            <=  0;
-    end
 
     case (read_state)
       IDLE: begin
         if (idle) begin
           sync_escape             <=  0;
           //The only way to transition to another state is if CL is IDLE
-          if (read_data_en) begin
-            if (single_rdwr) begin
-              if (!single_read_prev) begin
-                single_read_prev  <=  1;
-                read_data_stb     <=  1;
-                read_state        <=  WAIT_FOR_DATA;
-              end
-            end
-            else begin
-              //send a request to read data
-              read_data_stb       <=  1;
-              read_state          <=  WAIT_FOR_DATA;
-            end
-          end
-          else begin
-            first_read            <=  1;
+          if (read_data_stb) begin
+            //send a request to read data
+            read_state          <=  WAIT_FOR_DATA;
           end
         end
       end
       WAIT_FOR_DATA: begin
         //This state seems useless because it only sets a value but the state is used to indicate the system is idle or not
-        if (t_d2h_data_stb) begin
-          first_read          <=  0;
-        end
         /*
         if (command_layer_reset) begin
 //XXX: Issue a SYNC ESCAPE to cancel a large read request otherwise let it play out
@@ -564,24 +516,16 @@ always @ (posedge clk) begin
 
     dma_send_data_stb             <=  0;
 
-    write_data_stb                <=  0;
-    single_write_prev             <=  0;
-    first_write                   <=  1;
     enable_tl_data_ready          <=  0;
 
     dma_act_detected              <=  0;
   end
   else begin
     dma_send_data_stb             <=  0;
-    write_data_stb                <=  0;
 
     if (enable_tl_data_ready && if_read_activate) begin
       //Closes the loop on the data write feedback
       enable_tl_data_ready        <=  0;
-    end
-
-    if (!write_data_en) begin
-      single_write_prev           <=  0;
     end
 
     if (t_dma_activate_stb) begin
@@ -593,30 +537,15 @@ always @ (posedge clk) begin
       IDLE: begin
         if (idle) begin
           //The only way to transition to another state is if CL is IDLE
-          if (write_data_en) begin
-            if (single_rdwr) begin
-              if (!single_write_prev) begin
-                single_write_prev   <=  1;
-                write_state         <=  WAIT_FOR_DMA_ACT;
-                write_data_stb      <=  1;
-              end
-            end
-            else begin
-              //send a request to write data
-              write_state           <=  WAIT_FOR_DMA_ACT;
-              write_data_stb        <=  1;
-            end
-          end
-          else begin
-            //reset the the first write when the user deassertes the write_data_en
-            first_write             <=  1;
+          if (write_data_stb) begin
+            //send a request to write data
+            write_state           <=  WAIT_FOR_DMA_ACT;
           end
         end
       end
       WAIT_FOR_DMA_ACT: begin
         if (dma_act_detected) begin
           dma_act_detected        <=  0;
-          first_write             <=  0;
           enable_tl_data_ready    <=  1;
           write_state             <=  WAIT_FOR_WRITE_DATA;
         end

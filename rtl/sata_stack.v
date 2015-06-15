@@ -47,9 +47,8 @@ module sata_stack (
 
   output              hard_drive_error,
 
-  input               write_data_en,
-  input               single_rdwr,
-  input               read_data_en,
+  input               write_data_stb,
+  input               read_data_stb,
 
   input               send_user_command_stb,
   input               command_layer_reset,
@@ -335,11 +334,10 @@ sata_command_layer scl (
   .send_sync_escape     (send_sync_escape         ),
   .user_features        (user_features            ),
 
-  .write_data_en        (write_data_en            ),
-  .read_data_en         (read_data_en             ),
-  .single_rdwr          (single_rdwr              ),
-
+  .write_data_stb       (write_data_stb           ),
+  .read_data_stb        (read_data_stb            ),
   .send_user_command_stb(send_user_command_stb    ),
+
   .command_layer_reset  (command_layer_reset      ),
   .hard_drive_command   (hard_drive_command       ),
   .pio_data_ready       (pio_data_ready           ),
