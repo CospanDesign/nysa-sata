@@ -83,24 +83,23 @@ reg                 r_data_scrambler_en;
 reg                 r_platform_ready;
 reg                 r_dout_count;
 reg                 r_hold;
-reg                 r_single_rdwr;
 
 reg                 r_u2h_write_enable;
-reg         [23:0]  r_u2h_write_count;
+reg   [23:0]        r_u2h_write_count;
 reg                 r_h2u_read_enable;
 
 wire                hd_read_from_host;
-wire        [31:0]  hd_data_from_host;
+wire  [31:0]        hd_data_from_host;
 
 
 wire                hd_write_to_host;
-wire        [31:0]  hd_data_to_host;
+wire  [31:0]        hd_data_to_host;
 
-wire        [31:0]  user_dout;
+wire  [31:0]        user_dout;
 wire                user_dout_ready;
 wire                user_dout_activate;
 wire                user_dout_stb;
-wire        [23:0]  user_dout_size;
+wire  [23:0]        user_dout_size;
 
 
 wire  [31:0]        user_din;
@@ -109,10 +108,19 @@ wire  [1:0]         user_din_ready;
 wire  [1:0]         user_din_activate;
 wire  [23:0]        user_din_size;
 
+wire                dma_activate_stb;
+wire                d2h_reg_stb;
+wire                pio_setup_stb;
+wire                d2h_data_stb;
+wire                dma_setup_stb;
+wire                set_device_bits_stb;
+
+
+
 //There is a bug in COCOTB when stiumlating a signal, sometimes it can be corrupted if not registered
 always @ (*) r_rst                = rst;
-always @ (*) r_write_data_en      = write_data_en;
-always @ (*) r_read_data_en       = read_data_en;
+always @ (*) r_write_data_stb     = write_data_en;
+always @ (*) r_read_data_stb      = read_data_en;
 always @ (*) r_command_layer_reset= command_layer_reset;
 always @ (*) r_sector_count       = sector_count;
 always @ (*) r_sector_address     = sector_address;
@@ -120,7 +128,6 @@ always @ (*) r_prim_scrambler_en  = prim_scrambler_en;
 always @ (*) r_data_scrambler_en  = data_scrambler_en;
 always @ (*) r_platform_ready     = platform_ready;
 always @ (*) r_hold               = hold;
-always @ (*) r_single_rdwr        = single_rdwr;
 
 always @ (*) r_u2h_write_enable   = u2h_write_enable;
 always @ (*) r_u2h_write_count    = u2h_write_count;
@@ -185,28 +192,48 @@ hd_data_writer hd_2_user_generator(
 sata_stack ss (
   .rst                   (r_rst                ),  //reset
   .clk                   (clk                  ),  //clock used to run the stack
+  .command_layer_reset   (r_command_layer_reset),
+
+  .platform_ready        (platform_ready       ),  //the underlying physical platform is
+  .platform_error        (1'b0                 ),
+  .linkup                (linkup               ),  //link is finished
+
+  .sata_ready            (sata_ready           ),
+  .sata_busy             (sata_busy            ),
+
+  .send_sync_escape      (1'b0                 ),
+  .hard_drive_error      (                     ),
+
+  .pio_data_ready        (                     ),
+
+
+
+  //Host to Device Control
+  .hard_drive_command    (8'h00                ),
+  .write_data_stb        (r_write_data_stb     ),
+  .read_data_stb         (r_read_data_stb      ),
+  .send_user_command_stb (1'b0                 ),
+  .user_feaures          (16'h0000             ),
+  .sector_count          (r_sector_count       ),
+  .sector_address        (r_sector_address     ),
+
+
+  .dma_activate_stb       (dma_activate_stb       ),
+  .d2h_reg_stb            (d2h_reg_stb            ),
+  .pio_setup_stb          (pio_setup_stb          ),
+  .d2h_data_stb           (d2h_data_stb           ),
+  .dma_setup_stb          (dma_setup_stb          ),
+  .set_device_bits_stb    (set_device_bits_stb    ),
+
+
+
+
   .data_in_clk           (clk                  ),
   .data_in_clk_valid     (1'b1                 ),
   .data_out_clk          (clk                  ),
   .data_out_clk_valid    (1'b1                 ),
   .phy_error             (1'b0                 ),
 
-  .platform_ready        (platform_ready       ),  //the underlying physical platform is
-  .linkup                (linkup               ),  //link is finished
-  .sata_ready            (sata_ready           ),
-
-  .sata_busy             (sata_busy            ),
-
-  .write_data_en         (r_write_data_en      ),
-  .single_rdwr           (r_single_rdwr        ),
-  .read_data_en          (r_read_data_en       ),
-
-  .send_user_command_stb (1'b0                 ),
-  .command_layer_reset   (r_command_layer_reset),
-  .hard_drive_command    (8'h00                 ),
-
-  .sector_count          (r_sector_count       ),
-  .sector_address        (r_sector_address     ),
 
   .d2h_interrupt         (d2h_interrupt        ),
   .d2h_notification      (d2h_notification     ),

@@ -110,45 +110,9 @@ module sata_stack (
   input               tx_oob_complete,
   input               phy_error,
 
-//Debug
-  output              dbg_send_command_stb,
-  output              dbg_send_control_stb,
-  output              dbg_send_data_stb,
-
-  output              dbg_remote_abort,
-  output              dbg_xmit_error,
-  output              dbg_read_crc_error,
-
-//PIO
-  output              dbg_pio_response,
-  output              dbg_pio_direction,
-  output  [15:0]      dbg_pio_transfer_count,
-  output  [7:0]       dbg_pio_e_status,
-
-//Host to Device Regster Values
-  output  [7:0]       dbg_h2d_command,
-  output  [15:0]      dbg_h2d_features,
-  output  [7:0]       dbg_h2d_control,
-  output  [3:0]       dbg_h2d_port_mult,
-  output  [7:0]       dbg_h2d_device,
-  output  [47:0]      dbg_h2d_lba,
-  output  [15:0]      dbg_h2d_sector_count,
-
 //DMA Specific Control
 
 //Data Control
-  output              dbg_cl_if_ready,
-  output              dbg_cl_if_activate,
-  output  [23:0]      dbg_cl_if_size,
-  output              dbg_cl_if_strobe,
-  output  [31:0]      dbg_cl_if_data,
-
-  output  [1:0]       dbg_cl_of_ready,
-  output  [1:0]       dbg_cl_of_activate,
-  output              dbg_cl_of_strobe,
-  output  [31:0]      dbg_cl_of_data,
-  output  [23:0]      dbg_cl_of_size,
-
   output  [3:0]       dbg_cc_lax_state,
   output  [3:0]       dbg_cr_lax_state,
   output  [3:0]       dbg_cw_lax_state,
@@ -166,22 +130,7 @@ module sata_stack (
 
   output              dbg_ll_write_ready,
   output              dbg_ll_paw,
-  output              dbg_ll_write_start,
   output              dbg_ll_write_strobe,
-  output              dbg_ll_write_finished,
-  output  [31:0]      dbg_ll_write_data,
-  output  [31:0]      dbg_ll_write_size,
-  output              dbg_ll_write_hold,
-  output              dbg_ll_write_abort,
-
-  output              dbg_ll_read_start,
-  output              dbg_ll_read_strobe,
-  output  [31:0]      dbg_ll_read_data,
-  output              dbg_ll_read_ready,
-  output              dbg_ll_read_finished,
-  output              dbg_ll_remote_abort,
-  output              dbg_ll_xmit_error,
-
   output              dbg_ll_send_crc,
 
 //Phy Layer
@@ -633,33 +582,18 @@ assign                tx_is_k      = (phy_ready) ? ll_tx_is_k   : phy_tx_is_k;
 
 //Debug
 assign                ll_write_start        = t_write_start;
-assign                dbg_ll_write_start    = t_write_start;
 assign                ll_write_data         = t_write_data;
-assign                dbg_ll_write_data     = t_write_data;
 assign                ll_write_hold         = t_write_hold;
-assign                dbg_ll_write_hold     = t_write_hold;
 assign                ll_write_size         = t_write_size;
-assign                dbg_ll_write_size     = t_write_size;
 assign                ll_write_abort        = t_write_abort;
-assign                dbg_ll_write_abort    = t_write_abort;
 
 assign                ll_read_ready         = t_read_ready;
-assign                dbg_ll_read_ready     = t_read_ready;
 assign                ll_sync_escape        = t_sync_escape;
 
-assign                dbg_ll_write_strobe   = ll_write_strobe;
 assign                t_write_strobe        = ll_write_strobe;
 
-assign                dbg_ll_write_finished = ll_write_finished;
 assign                t_write_finished      = ll_write_finished;
 
-
-assign                dbg_ll_read_strobe    = ll_read_strobe;
-assign                dbg_ll_read_start     = ll_read_start;
-assign                dbg_ll_read_finished  = ll_read_finished;
-assign                dbg_ll_read_data      = ll_read_data;
-assign                dbg_ll_remote_abort   = ll_remote_abort;
-assign                dbg_ll_xmit_error     = ll_xmit_error;
 
 assign                t_read_strobe         = ll_read_strobe;
 assign                t_read_start          = ll_read_start;
@@ -669,41 +603,18 @@ assign                t_remote_abort        = ll_remote_abort;
 assign                t_xmit_error          = ll_xmit_error;
 assign                t_read_crc_ok         = ll_read_crc_ok;
 
-assign                dbg_send_command_stb  = send_command_stb;
-assign                dbg_send_control_stb  = send_control_stb;
-assign                dbg_send_data_stb     = send_data_stb;
-
-assign                dbg_remote_abort        = remote_abort;
-assign                dbg_xmit_error          = xmit_error;
-assign                dbg_read_crc_error      = read_crc_error;
-
-assign                dbg_h2d_command         = h2d_command;
-assign                dbg_h2d_features        = h2d_features;
-assign                dbg_h2d_control         = h2d_control;
-assign                dbg_h2d_port_mult       = h2d_port_mult;
-assign                dbg_h2d_device          = h2d_device;
-assign                dbg_h2d_sector_count    = h2d_sector_count;
 
 assign                cl_if_ready             = if_ready;
-assign                dbg_cl_if_activate      = cl_if_activate;
 assign                if_activate             = cl_if_activate;
-assign                dbg_cl_if_size          = if_size;
 assign                cl_if_size              = if_size;
-assign                dbg_cl_if_strobe        = cl_if_strobe;
 assign                if_strobe               = cl_if_strobe;
-assign                dbg_cl_if_data          = if_data;
 assign                cl_if_data              = if_data;
 
 assign                cl_of_ready             = of_ready;
-assign                dbg_cl_of_ready         = of_ready;
 assign                of_activate             = cl_of_activate;
-assign                dbg_cl_of_activate      = cl_of_activate;
 assign                of_strobe               = cl_of_strobe;
-assign                dbg_cl_of_strobe        = cl_of_strobe;
 assign                of_data                 = cl_of_data;
-assign                dbg_cl_of_data          = cl_of_data;
 assign                cl_of_size              = of_size;
-assign                dbg_cl_of_size          = of_size;
 
 //Synchronous Logic
 endmodule
