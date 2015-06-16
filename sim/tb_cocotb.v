@@ -114,6 +114,7 @@ wire                pio_setup_stb;
 wire                d2h_data_stb;
 wire                dma_setup_stb;
 wire                set_device_bits_stb;
+wire  [7:0]         d2h_fis;
 
 
 
@@ -195,7 +196,7 @@ sata_stack ss (
   .command_layer_reset   (r_command_layer_reset),
 
   .platform_ready        (platform_ready       ),  //the underlying physical platform is
-  .platform_error        (1'b0                 ),
+  .platform_error        (                     ),
   .linkup                (linkup               ),  //link is finished
 
   .sata_ready            (sata_ready           ),
@@ -206,50 +207,44 @@ sata_stack ss (
 
   .pio_data_ready        (                     ),
 
-
-
   //Host to Device Control
   .hard_drive_command    (8'h00                ),
   .write_data_stb        (r_write_data_stb     ),
   .read_data_stb         (r_read_data_stb      ),
   .send_user_command_stb (1'b0                 ),
-  .user_feaures          (16'h0000             ),
+  .user_features         (16'h0000             ),
   .sector_count          (r_sector_count       ),
   .sector_address        (r_sector_address     ),
 
+  .dma_activate_stb      (dma_activate_stb     ),
+  .d2h_reg_stb           (d2h_reg_stb          ),
+  .pio_setup_stb         (pio_setup_stb        ),
+  .d2h_data_stb          (d2h_data_stb         ),
+  .dma_setup_stb         (dma_setup_stb        ),
+  .set_device_bits_stb   (set_device_bits_stb  ),
 
-  .dma_activate_stb       (dma_activate_stb       ),
-  .d2h_reg_stb            (d2h_reg_stb            ),
-  .pio_setup_stb          (pio_setup_stb          ),
-  .d2h_data_stb           (d2h_data_stb           ),
-  .dma_setup_stb          (dma_setup_stb          ),
-  .set_device_bits_stb    (set_device_bits_stb    ),
+  .d2h_fis                (d2h_fis             ),
+  .d2h_interrupt          (d2h_interrupt       ),
+  .d2h_notification       (d2h_notification    ),
+  .d2h_port_mult          (d2h_port_mult       ),
+  .d2h_device             (d2h_device          ),
+  .d2h_lba                (d2h_lba             ),
+  .d2h_sector_count       (d2h_sector_count    ),
+  .d2h_status             (d2h_status          ),
+  .d2h_error              (d2h_error           ),
 
-
-
-
+  //Data from host to the hard drive path
   .data_in_clk           (clk                  ),
   .data_in_clk_valid     (1'b1                 ),
-  .data_out_clk          (clk                  ),
-  .data_out_clk_valid    (1'b1                 ),
-  .phy_error             (1'b0                 ),
-
-
-  .d2h_interrupt         (d2h_interrupt        ),
-  .d2h_notification      (d2h_notification     ),
-  .d2h_port_mult         (d2h_port_mult        ),
-  .d2h_device            (d2h_device           ),
-  .d2h_lba               (d2h_lba              ),
-  .d2h_sector_count      (d2h_sector_count     ),
-  .d2h_status            (d2h_status           ),
-  .d2h_error             (d2h_error            ),
-
   .user_din              (user_din             ),   //User Data Here
   .user_din_stb          (user_din_stb         ),   //Strobe Each Data word in here
   .user_din_ready        (user_din_ready       ),   //Using PPFIFO Ready Signal
   .user_din_activate     (user_din_activate    ),   //Activate PPFIFO Channel
   .user_din_size         (user_din_size        ),   //Find the size of the data to write to the device
 
+  //Data from hard drive to host path
+  .data_out_clk          (clk                  ),
+  .data_out_clk_valid    (1'b1                 ),
   .user_dout             (user_dout            ),
   .user_dout_ready       (user_dout_ready      ),
   .user_dout_activate    (user_dout_activate   ),
@@ -259,13 +254,14 @@ sata_stack ss (
   .transport_layer_ready (transport_layer_ready),
   .link_layer_ready      (link_layer_ready     ),
   .phy_ready             (phy_ready            ),
+  .phy_error             (1'b0                 ),
 
   .tx_dout               (tx_dout              ),
   .tx_is_k               (tx_is_k              ),
   .tx_comm_reset         (tx_comm_reset        ),
   .tx_comm_wake          (tx_comm_wake         ),
   .tx_elec_idle          (tx_elec_idle         ),
-  .tx_oob_complete       (1'b0                 ),
+  .tx_oob_complete       (1'b1                 ),
 
   .rx_din                (rx_din               ),
   .rx_is_k               (rx_is_k              ),
@@ -317,23 +313,24 @@ faux_sata_hd  fshd   (
   .dbg_send_pio_stb      (1'b0                 ),
   .dbg_send_dev_bits_stb (1'b0                 ),
 
-  .dbg_pio_transfer_count(0                    ),
+  .dbg_pio_transfer_count(16'h0000             ),
   .dbg_pio_direction     (1'b0                 ),
-  .dbg_pio_e_status      (0                    ),
+  .dbg_pio_e_status      (8'h00                ),
 
   .dbg_d2h_interrupt     (1'b0                 ),
   .dbg_d2h_notification  (1'b0                 ),
-  .dbg_d2h_status        (1'b0                 ),
-  .dbg_d2h_error         (1'b0                 ),
-  .dbg_d2h_port_mult     (1'b0                 ),
-  .dbg_d2h_device        (1'b0                 ),
-  .dbg_d2h_lba           (1'b0                 ),
-  .dbg_d2h_sector_count  (1'b0                 ),
+  .dbg_d2h_status        (8'b0                 ),
+  .dbg_d2h_error         (8'b0                 ),
+  .dbg_d2h_port_mult     (4'b0000              ),
+  .dbg_d2h_device        (8'h00                ),
+  .dbg_d2h_lba           (48'h000000000000     ),
+  .dbg_d2h_sector_count  (16'h0000             ),
 
   .dbg_cl_if_data        (32'b0                ),
-  .dbg_cl_if_ready       (2'b0                 ),
+  .dbg_cl_if_ready       (1'b0                 ),
   .dbg_cl_if_size        (24'h0                ),
-  .dbg_cl_of_ready       (1'b0                 ),
+
+  .dbg_cl_of_ready       (2'b0                 ),
   .dbg_cl_of_size        (24'h0                ),
   .hd_read_from_host     (hd_read_from_host    ),
   .hd_data_from_host     (hd_data_from_host    ),
