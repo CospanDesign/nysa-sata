@@ -114,7 +114,26 @@ module sata_command_layer (
   input       [7:0]   d2h_status,
   input       [7:0]   d2h_error,
 
+  output              d2h_error_bbk,    //Bad Block
+  output              d2h_error_unc,    //Uncorrectable Error
+  output              d2h_error_mc,     //Removable Media Error
+  output              d2h_error_idnf,   //request sector's ID Field could not be found
+  output              d2h_error_mcr,    //Removable Media Error
+  output              d2h_error_abrt,   //Abort (from invalid command, drive not ready, write fault)
+  output              d2h_error_tk0nf,  //Track 0 not found
+  output              d2h_error_amnf,   //Data Address Mark is not found after finding correct ID
 
+  output              d2h_status_bsy,   //Set to 1 when drive has access to command block, no other bits are valid when 1
+                                        //  Set after reset
+                                        //  Set after soft reset (srst)
+                                        //  Set immediately after host writes to command register
+  output              d2h_status_drdy,  //Drive is ready to accept command
+  output              d2h_status_dwf,   //Drive Write Fault
+  output              d2h_status_dsc,   //Drive Seek Complete
+  output              d2h_status_drq,   //Data Request, Drive is ready to send data to the host
+  output              d2h_status_corr,  //Correctable Data bit (an error that was encountered but was corrected)
+  output              d2h_status_idx,   //once per disc revolution this bit is set to one then back to zero
+  output              d2h_status_err,   //error bit, if this bit is high check the error flags
 
 //command layer data interface
   input               t_if_strobe,
@@ -297,9 +316,6 @@ assign  if_write_strobe       = user_din_stb;
 assign  user_din_ready        = if_write_ready;
 assign  if_write_activate     = user_din_activate;
 assign  user_din_size         = if_write_size;
-//assign  user_din_size         = 24'h00800;
-//assign  user_din_size         = 24'h00400;
-//assign  user_din_size         = 24'h00200;
 
 assign  user_dout             = of_read_data;
 assign  user_dout_ready       = of_read_ready;
@@ -307,9 +323,23 @@ assign  of_read_activate      = user_dout_activate;
 assign  user_dout_size        = of_read_size;
 assign  of_read_strobe        = user_dout_stb;
 
+assign  d2h_status_bsy        = d2h_status[7];
+assign  d2h_status_drdy       = d2h_status[6];
+assign  d2h_status_dwf        = d2h_status[5];
+assign  d2h_status_dsc        = d2h_status[4];
+assign  d2h_status_drq        = d2h_status[3];
+assign  d2h_status_corr       = d2h_status[2];
+assign  d2h_status_idx        = d2h_status[1];
+assign  d2h_status_err        = d2h_status[0];
 
-//assign  write_data_available  = (if_read_ready || if_read_activate) ||  (if_write_ready != 2'b11);
-
+assign  d2h_error_blk         = d2h_error[7];
+assign  d2h_error_unc         = d2h_error[6];
+assign  d2h_error_mc          = d2h_error[5];
+assign  d2h_error_idnf        = d2h_error[4];
+assign  d2h_error_mcr         = d2h_error[3];
+assign  d2h_error_abrt        = d2h_error[2];
+assign  d2h_error_tk0nf       = d2h_error[1];
+assign  d2h_error_amnf        = d2h_error[0];
 
 //Strobes
 assign  t_send_command_stb    = read_data_stb ||  write_data_stb  || send_user_command_stb;
