@@ -23,8 +23,8 @@ class SataController(object):
     @cocotb.coroutine
     def reset(self):
         self.dut.rst = 0
-        self.dut.write_data_en = 0
-        self.dut.read_data_en = 0
+        self.dut.write_data_stb = 0
+        self.dut.read_data_stb = 0
         self.dut.command_layer_reset = 0
         self.dut.sector_count = 0
         self.dut.sector_address = 0
@@ -52,9 +52,6 @@ class SataController(object):
         self.dut.platform_ready = 1
 
         yield(self.wait_clocks(10))
-        self.dut.command_layer_reset = 1
-        yield(self.wait_clocks(10))
-        self.dut.command_layer_reset = 0
 
     def ready(self):
         if self.dut.sata_ready == 1:
@@ -63,8 +60,12 @@ class SataController(object):
 
     @cocotb.coroutine
     def wait_for_idle(self):
-        yield(cocotb.triggers.FallingEdge(self.dut.sata_busy))
-        yield(cocotb.triggers.RisingEdge(self.dut.sata_ready))
+        print "Wait for idle..."
+        if self.dut.sata_busy.value == 1:
+            yield(cocotb.triggers.FallingEdge(self.dut.sata_busy))
+        if self.dut.sata_ready.value == 0:
+            yield(cocotb.triggers.RisingEdge(self.dut.sata_ready))
+        print "Idle!"
 
     @cocotb.coroutine
     def write_to_hard_drive(self, length, address):
@@ -74,16 +75,16 @@ class SataController(object):
         self.dut.sector_address = address
         #What does this do?
         self.dut.sector_count = 0
-        self.dut.write_data_en = 1
+        print "Write!"
+        self.dut.write_data_stb = 1
         yield(self.wait_clocks(1))
-        self.dut.write_data_en = 0
+        self.dut.write_data_stb = 0
         yield(self.wait_for_idle())
         yield(self.wait_clocks(100))
         #self.dut.h2u_read_enable = 0
 
     @cocotb.coroutine
     def read_from_hard_drive(self, length, address):
-        self.dut.read_data_en = 1
         self.dut.sector_address = address
         sector_count = (length / 0x800) + 1
         self.dut.sector_count = sector_count
@@ -91,10 +92,21 @@ class SataController(object):
         #Also tell the reader to analyze the incomming data
         self.dut.h2u_read_enable = 1
         yield(self.wait_clocks(10))
+
+        print "Read..."
+        self.dut.read_data_stb = 1
+        yield(self.wait_clocks(1))
+        self.dut.read_data_stb = 0
+        yield(self.wait_clocks(100))
         while (self.dut.h2u_read_total_count.value < length):
-            self.dut.log.info("count: %d" % self.dut.h2u_read_total_count.value)
+            if self.dut.sata_ready.value == 1:
+                self.dut.read_data_stb = 1
+                yield(self.wait_clocks(1))
+                self.dut.read_data_stb = 0
+                yield(self.wait_clocks(10))
+
             yield(self.wait_clocks(100))
+            self.dut.log.info("count: %d" % self.dut.h2u_read_total_count.value)
 
         self.dut.h2u_read_enable = 0
-        self.dut.read_data_en = 0
 

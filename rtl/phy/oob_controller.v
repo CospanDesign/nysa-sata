@@ -171,7 +171,7 @@ always @ (posedge clk) begin
       end
       WAIT_FOR_NO_INIT: begin
         //wait for the init signal to go low from the device
-        if (!comm_init_detect && timeout) begin
+        if (!comm_init_detect && (timeout || tx_oob_complete)) begin
           $display ("oob_controller: INIT deasserted");
           $display ("oob_controller: start configuration");
           state             <=  WAIT_FOR_CONFIGURE_END;
@@ -249,6 +249,7 @@ always @ (posedge clk) begin
         //a sequence of 0's and 1's
         tx_dout             <=  `DIALTONE;
         tx_is_k             <=  0;
+        //$display ("rx din: %h, k: %h", rx_din, rx_is_k);
         if (align_detected) begin
           //we got something from the device!
           timer             <=  0;

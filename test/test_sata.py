@@ -7,7 +7,7 @@ from sata_model import SataController
 
 CLK_PERIOD = 4
 
-@cocotb.test(skip = True)
+@cocotb.test(skip = False)
 def bootup_test(dut):
     """
     Description:
@@ -31,7 +31,8 @@ def bootup_test(dut):
         dut.log.info("Sata is Ready")
 
 
-@cocotb.test(skip = True)
+
+@cocotb.test(skip = False)
 def short_write_test(dut):
     """
     Description:
@@ -54,7 +55,7 @@ def short_write_test(dut):
     dut.log.info("Wrote 1 piece of data to SATA")
 
 
-@cocotb.test(skip = True)
+@cocotb.test(skip = False)
 def short_read_test(dut):
     """
     Description:
@@ -76,7 +77,7 @@ def short_read_test(dut):
     yield(sata.wait_clocks(200))
 
 
-@cocotb.test(skip = True)
+@cocotb.test(skip = False)
 def long_write_test(dut):
     """
     Description:
@@ -99,7 +100,7 @@ def long_write_test(dut):
     dut.log.info("Wrote %d piece of data to SATA" % data_count)
 
 
-@cocotb.test(skip = True)
+@cocotb.test(skip = False)
 def long_read_test(dut):
     """
     Description:
@@ -123,7 +124,7 @@ def long_read_test(dut):
     yield(sata.wait_for_idle())
     yield(sata.wait_clocks(100))
 
-@cocotb.test(skip = True)
+@cocotb.test(skip = False)
 def long_write_with_easy_back_preassure_test(dut):
     """
     Description:
@@ -169,7 +170,7 @@ def long_write_with_easy_back_preassure_test(dut):
     #dut.h2u_read_enable = 0
     dut.log.info("Wrote %d piece of data to SATA" % length)
 
-@cocotb.test(skip = True)
+@cocotb.test(skip = False)
 def long_write_with_hard_back_preassure_test(dut):
     """
     Description:

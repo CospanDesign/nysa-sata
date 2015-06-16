@@ -118,12 +118,14 @@ always @ (posedge clk) begin
 
     if ((comm_reset_detect) && (state > WAIT_FOR_NO_RESET)) begin
       $display("faux_sata_hd: Asynchronous RESET detected");
-      state                 <=  IDLE;
+      align_count           <=  0;
+      hd_ready              <=  0;
+      state                 <=  WAIT_FOR_NO_RESET;
     end
 
     case (state)
       IDLE: begin
-        align_count   <=  0;
+        align_count         <=  0;
         hd_ready            <=  0;
         tx_set_elec_idle    <=  1;
         if (comm_reset_detect) begin
@@ -136,8 +138,7 @@ always @ (posedge clk) begin
         if (!comm_reset_detect) begin
           //host stopped sending reset
           $display("faux_sata_hd: RESET deasserted");
-          hd_ready            <=  0;
-          tx_set_elec_idle    <=  1;
+          hd_ready          <=  0;
           state             <=  SEND_INIT;
         end
       end
@@ -170,12 +171,12 @@ always @ (posedge clk) begin
       end
       WAIT_FOR_DIALTONE: begin
         if (dialtone_detected) begin
-          $display ("faul_sata_hd: detected dialtone");
+          $display ("faux_sata_hd: detected dialtone");
           state             <=  SEND_ALIGN;
         end
       end
       SEND_ALIGN: begin
-        $display ("faul_sata_hd: send aligns");
+        $display ("faux_sata_hd: send aligns");
         tx_set_elec_idle    <=  0;
         tx_dout             <=  `PRIM_ALIGN;
         tx_is_k             <=  1;
@@ -184,7 +185,11 @@ always @ (posedge clk) begin
         rx_byte_is_aligned  <=  1;
       end
       WAIT_FOR_ALIGN: begin
+        tx_is_k             <=  1;
+        tx_dout             <=  `PRIM_ALIGN;
         rx_byte_is_aligned  <=  1;
+        //$display ("faux_sata_hd: waiting for aligns...");
+        //$display ("rx din: %h, k: %h", rx_din, rx_is_k);
         if (align_detected) begin
           $display ("faux_sata_hd: detected ALIGN primitive from host");
           $display ("faux_sata_hd: Ready");

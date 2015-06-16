@@ -161,8 +161,8 @@ reg                 send_command_stb;
 wire                dev_busy;
 wire                dev_data_req;
 
-reg         [31:0]  reset_count;
-wire                reset_timeout;
+//reg         [31:0]  reset_count;
+//wire                reset_timeout;
 
 //Read State Machine
 reg         [3:0]   read_state;
@@ -321,7 +321,8 @@ assign  idle                  = (cntrl_state  == IDLE) &&
                                 (write_state  == IDLE) &&
                                 transport_layer_ready;
 
-assign  command_layer_ready   = idle & reset_timeout;
+//assign  command_layer_ready   = idle & reset_timeout;
+assign  command_layer_ready   = idle;
 
 assign  h2d_command           = write_data_stb        ? `COMMAND_DMA_WRITE_EX:
                                 read_data_stb         ? `COMMAND_DMA_READ_EX :
@@ -346,7 +347,7 @@ assign  cl_c_state            = cntrl_state;
 assign  cl_r_state            = read_state;
 assign  cl_w_state            = write_state;
 
-assign  reset_timeout         = (reset_count >=  `RESET_TIMEOUT);
+//assign  reset_timeout         = (reset_count >=  `RESET_TIMEOUT);
 
 //Synchronous Logic
 
@@ -364,7 +365,7 @@ always @ (posedge clk) begin
     pio_data_ready                <=  0;
     status                        <=  0;
 
-    reset_count                   <=  0;
+    //reset_count                   <=  0;
     sata_busy                     <=  1;
   end
   else begin
@@ -372,6 +373,7 @@ always @ (posedge clk) begin
     cntrl_send_data_stb           <=  0;
     pio_data_ready                <=  0;
     //Reset Count
+/*
     if (reset_count < `RESET_TIMEOUT) begin
       reset_count                 <=  reset_count + 1;
     end
@@ -379,6 +381,7 @@ always @ (posedge clk) begin
     if (!reset_timeout) begin
       cntrl_state                 <=  IDLE;
     end
+*/
 
     if (t_d2h_reg_stb) begin
       sata_busy                   <=  0;
@@ -398,14 +401,15 @@ always @ (posedge clk) begin
         if (command_layer_reset && !srst) begin
           srst                  <=  1;
           t_send_control_stb    <=  1;
-          reset_count           <=  0;
+          //reset_count           <=  0;
         end
 
         if (idle) begin
           //The only way to transition to another state is if CL is IDLE
 
           //User Initiated commands
-          if (!command_layer_reset && srst && reset_timeout) begin
+          //if (!command_layer_reset && srst && reset_timeout) begin
+          if (!command_layer_reset && srst) begin
             srst                  <=  0;
             t_send_control_stb    <=  1;
           end
@@ -492,7 +496,8 @@ always @ (posedge clk) begin
       end
     endcase
 
-    if (command_layer_reset || !reset_timeout || send_sync_escape) begin
+    //if (command_layer_reset || !reset_timeout || send_sync_escape) begin
+    if (command_layer_reset || send_sync_escape) begin
       if (read_state  != IDLE) begin
         sync_escape               <=  1;
       end
@@ -573,7 +578,8 @@ always @ (posedge clk) begin
     endcase
 
 
-    if (command_layer_reset || !reset_timeout) begin
+    //if (command_layer_reset || !reset_timeout) begin
+    if (command_layer_reset) begin
       //Break out of the normal flow and return to IDLE
       write_state                 <=  IDLE;
     end

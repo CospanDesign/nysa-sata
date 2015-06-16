@@ -104,6 +104,8 @@ parameter SEND_DATA         = 4'h5;
 parameter READ_IN_PROGRESS  = 4'h6;
 parameter SEND_STATUS       = 4'h7;
 
+parameter SLEEP_LENGTH      = 100;
+
 //Registers/Wires
 reg         [3:0]   state               = SLEEP_START;
 wire                idle;
@@ -113,7 +115,6 @@ reg         [15:0]  sector_count        = 0;
 reg         [15:0]  sector_size         = 16'h0000;
 
 reg         [15:0]  sleep_count         = 0;
-reg         [15:0]  sleep_size          = 1000;
 
 
 wire                soft_reset;
@@ -152,7 +153,6 @@ always @ (posedge clk) begin
     sector_size                         <=  1000;
 
     sleep_count                         <=  0;
-    sleep_size                          <=  1000;
 
 
 
@@ -181,14 +181,16 @@ always @ (posedge clk) begin
     send_dev_bits_stb                   <=  0;
 
     if (soft_reset) begin
+      if (soft_reset) begin
+        $display ("Reset from soft reset");
+      end
       state                             <=  SLEEP_START;
       sleep_count                       <=  0;
-      sleep_size                        <=  1000;
     end
 
     case (state)
       SLEEP_START: begin
-        if (sleep_count  < sleep_size) begin
+        if (sleep_count  < SLEEP_LENGTH) begin
           sleep_count                   <=  sleep_count + 1;
         end
         else begin
@@ -196,6 +198,7 @@ always @ (posedge clk) begin
         end
       end
       SEND_DIAGNOSTICS: begin
+        $display ("Send Diagnostics");
         send_reg_stb                    <=  1;
         state                           <=  IDLE;
       end
@@ -285,7 +288,6 @@ always @ (posedge clk) begin
         $display ("fcl: Entered illegal state, restart");
         state                       <=  SLEEP_START;
         sleep_count                 <=  0;
-        sleep_size                  <=  1000;
       end
     endcase
   end

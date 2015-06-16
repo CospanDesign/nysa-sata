@@ -13,8 +13,8 @@ output              linkup,           //link is finished
 output              sata_ready,
 output              sata_busy,
 
-input               write_data_en,
-input               read_data_en,
+input               write_data_stb,
+input               read_data_stb,
 
 input               command_layer_reset,
 input       [15:0]  sector_count,
@@ -73,8 +73,8 @@ wire                comm_init_detect;
 wire                comm_wake_detect;
 
 reg                 r_rst;
-reg                 r_write_data_en;
-reg                 r_read_data_en;
+reg                 r_write_data_stb;
+reg                 r_read_data_stb;
 reg                 r_command_layer_reset;
 reg     [15:0]      r_sector_count;
 reg     [47:0]      r_sector_address;
@@ -115,13 +115,14 @@ wire                d2h_data_stb;
 wire                dma_setup_stb;
 wire                set_device_bits_stb;
 wire  [7:0]         d2h_fis;
+wire                i_rx_byte_is_aligned;
 
 
 
 //There is a bug in COCOTB when stiumlating a signal, sometimes it can be corrupted if not registered
 always @ (*) r_rst                = rst;
-always @ (*) r_write_data_stb     = write_data_en;
-always @ (*) r_read_data_stb      = read_data_en;
+always @ (*) r_write_data_stb     = write_data_stb;
+always @ (*) r_read_data_stb      = read_data_stb;
 always @ (*) r_command_layer_reset= command_layer_reset;
 always @ (*) r_sector_count       = sector_count;
 always @ (*) r_sector_address     = sector_address;
@@ -266,6 +267,7 @@ sata_stack ss (
   .rx_din                (rx_din               ),
   .rx_is_k               (rx_is_k              ),
   .rx_elec_idle          (rx_elec_idle         ),
+  .rx_byte_is_aligned    (i_rx_byte_is_aligned ),
   .comm_init_detect      (comm_init_detect     ),
   .comm_wake_detect      (comm_wake_detect     ),
 
@@ -283,6 +285,7 @@ faux_sata_hd  fshd   (
   .rx_din                (tx_dout              ),
   .rx_is_k               ({3'b000, tx_is_k}    ),
   .rx_is_elec_idle       (tx_elec_idle         ),
+  .rx_byte_is_aligned    (i_rx_byte_is_aligned ),
 
   .comm_reset_detect     (tx_comm_reset        ),
   .comm_wake_detect      (tx_comm_wake         ),

@@ -419,7 +419,7 @@ faux_sata_hd_transport  ftl (
 );
 
 faux_hd_command_layer fcl(
-  .rst                  (rst                    ),
+  .rst                  (rst || !hd_ready       ),
   .clk                  (clk                    ),
 
   .command_layer_ready  (command_layer_ready    ),
