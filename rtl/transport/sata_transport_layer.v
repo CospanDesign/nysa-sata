@@ -101,7 +101,7 @@ module sata_transport_layer (
   input               ll_write_strobe,
   input               ll_write_finished,
   output      [31:0]  ll_write_data,
-  output      [31:0]  ll_write_size,
+  output      [23:0]  ll_write_size,
   output              ll_write_hold,
   output              ll_write_abort,
   input               ll_xmit_error,
@@ -160,7 +160,7 @@ reg                 cmd_bit;
 
 reg                 reg_write_start;
 wire        [31:0]  reg_write_data;
-wire        [31:0]  reg_write_size;
+wire        [23:0]  reg_write_size;
 reg                 reg_write_ready;
 wire                reg_write_hold;
 wire                reg_write_abort;
@@ -178,13 +178,15 @@ wire                reg_read_stb;
 reg                 data_write_start;
 wire                data_write_strobe;
 wire                data_read_strobe;
-wire        [31:0]  data_write_size;
+wire        [23:0]  data_write_size;
 wire        [31:0]  data_write_data;
 wire                data_write_hold;
 wire                data_write_abort;
 
 reg                 data_read_ready;
 reg                 send_data_fis_id;
+
+reg                 ll_write_finished_en;
 
 
 
@@ -210,10 +212,9 @@ assign  cl_of_strobe            = (reg_read)    ? 1'b0                          
 assign  cl_of_data              = ll_read_data;
 
 //Data Register Write Control Signals
-assign  data_write_data         = (send_data_fis_id)     ? `FIS_DATA                : cl_if_data;
+assign  data_write_data         = (send_data_fis_id)     ? {24'h000, `FIS_DATA}  : cl_if_data;
                                                       //the first DWORD is the FIS ID
-assign  data_write_size         = (cl_if_size + 32'h1);
-//assign  data_write_size         = cl_if_size;
+assign  data_write_size         = cl_if_size + 24'h1;
                                                       //Add 1 to the size so that there is room for the FIS ID
 assign  data_write_strobe       = ll_write_strobe;
 assign  data_read_strobe        = ll_read_strobe;
@@ -350,11 +351,12 @@ always @ (posedge clk) begin
 
     data_write_start            <=  0;
 
+    ll_write_finished_en        <=  0;
   end
   else begin
     //Strobed signals
     if (phy_ready) begin
-      //only deassert a link layer strobe when Phy is ready
+      //only deassert a link layer strobe when Phy is ready and not sending aligns
       data_write_start          <=  0;
       reg_write_start           <=  0;
     end
@@ -391,11 +393,16 @@ always @ (posedge clk) begin
       cl_if_activate            <=  1;
     end
 
+    if (ll_write_finished) begin
+        ll_write_finished_en    <= 1;
+    end
+
     case (state)
       IDLE: begin
         register_fis_ptr        <=  0;
         reg_read_count          <=  0;
         cmd_bit                 <=  0;
+        ll_write_finished_en    <=  0;
         //Detect a FIS
         if(ll_read_start) begin
           //detect the start of a frame
@@ -486,7 +493,7 @@ always @ (posedge clk) begin
             register_fis_ptr    <=  register_fis_ptr + 8'h1;
           end
         end
-        if (ll_write_finished) begin
+        if (ll_write_finished_en) begin
           if (ll_xmit_error) begin
             state               <=  RETRY;
           end
@@ -497,6 +504,7 @@ always @ (posedge clk) begin
       end
       RETRY: begin
         if (link_layer_ready) begin
+          ll_write_finished_en  <=  0;    
           reg_write_start       <=  1;
           register_fis_ptr      <=  0;
           state                 <=  WRITE_H2D_REG;
@@ -566,7 +574,7 @@ always @ (posedge clk) begin
         if (ll_write_strobe && send_data_fis_id) begin
           send_data_fis_id      <=  0;
         end
-        if (ll_write_finished) begin
+        if (ll_write_finished_en) begin
           cl_if_activate        <=  0;
           state                 <=  IDLE;
           if (pio_response) begin

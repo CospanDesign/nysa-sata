@@ -217,12 +217,26 @@ always @ (posedge clk) begin
                 sector_size             <=  h2d_sector_count;
                 state                   <=  SEND_DATA;
               end
+              8'h24: begin
+                //send_data_stb           <=  1;
+                sector_count            <=  0;
+                sector_size             <=  h2d_sector_count;
+                state                   <=  SEND_DATA;
+              end
+
               `COMMAND_DMA_WRITE_EX: begin
                 send_dma_act_stb        <=  1;
                 sector_count            <=  0;
                 sector_size             <=  h2d_sector_count;
                 state                   <=  DMA_READY;
               end
+              8'h34: begin
+                send_dma_act_stb        <=  1;
+                sector_count            <=  0;
+                sector_size             <=  h2d_sector_count;
+                state                   <=  DMA_READY;
+              end
+
               default: begin
                 //unrecognized command
                 $display ("fcl: Unrecognized command from host");

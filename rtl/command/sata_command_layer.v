@@ -43,11 +43,11 @@ module sata_command_layer (
   input       [15:0]  user_features,
 
 //XXX: New Stb
-  input               write_data_stb,
-  input               read_data_stb,
+//  input               write_data_stb,
+//  input               read_data_stb,
   output              hard_drive_error,
 
-  input               send_user_command_stb,
+  input               execute_command_stb,
   input               command_layer_reset,
 
   output  reg         pio_data_ready,
@@ -61,6 +61,7 @@ module sata_command_layer (
   output      [1:0]   user_din_ready,
   input       [1:0]   user_din_activate,
   output      [23:0]  user_din_size,
+  output              user_din_empty,
 
   output      [31:0]  user_dout,
   output              user_dout_ready,
@@ -151,8 +152,7 @@ module sata_command_layer (
 
 //Debug
   output      [3:0]   cl_c_state,
-  output      [3:0]   cl_w_state,
-  output      [3:0]   cl_r_state
+  output      [3:0]   cl_w_state
 
 );
 
@@ -162,12 +162,9 @@ parameter IDLE                = 4'h0;
 parameter PIO_WAIT_FOR_DATA   = 4'h1;
 parameter PIO_WRITE_DATA      = 4'h2;
 
-parameter WAIT_FOR_DATA       = 4'h1;
-
 parameter WAIT_FOR_DMA_ACT    = 4'h1;
 parameter WAIT_FOR_WRITE_DATA = 4'h2;
 parameter SEND_DATA           = 4'h3;
-parameter WAIT_FOR_STATUS     = 4'h4;
 
 //Registers/Wires
 reg         [3:0]   cntrl_state;
@@ -180,19 +177,12 @@ reg                 send_command_stb;
 wire                dev_busy;
 wire                dev_data_req;
 
-//reg         [31:0]  reset_count;
-//wire                reset_timeout;
-
-//Read State Machine
-reg         [3:0]   read_state;
-
 //Write State Machine
 reg         [3:0]   write_state;
 
 reg                 dma_send_data_stb;
-reg                 dma_act_detected;
+reg                 dma_act_detected_en;
 
-//wire                write_data_available;
 reg                 enable_tl_data_ready;
 
 //Ping Pong FIFOs
@@ -200,7 +190,6 @@ wire        [1:0]   if_write_ready;
 wire        [1:0]   if_write_activate;
 wire        [23:0]  if_write_size;
 wire                if_write_strobe;
-//wire                if_starved;
 wire        [31:0]  if_write_data;
 
 wire                if_read_strobe;
@@ -243,7 +232,7 @@ ppfifo # (
   .write_fifo_size      (if_write_size            ),
   .write_strobe         (if_write_strobe          ),
   //.starved              (if_starved               ),
-  .starved              (                         ),
+  .starved              (user_din_empty           ),
 
   //read side
 //XXX: This can be different clocks
@@ -332,7 +321,7 @@ assign  d2h_status_corr       = d2h_status[2];
 assign  d2h_status_idx        = d2h_status[1];
 assign  d2h_status_err        = d2h_status[0];
 
-assign  d2h_error_blk         = d2h_error[7];
+assign  d2h_error_bbk         = d2h_error[7];
 assign  d2h_error_unc         = d2h_error[6];
 assign  d2h_error_mc          = d2h_error[5];
 assign  d2h_error_idnf        = d2h_error[4];
@@ -342,23 +331,18 @@ assign  d2h_error_tk0nf       = d2h_error[1];
 assign  d2h_error_amnf        = d2h_error[0];
 
 //Strobes
-assign  t_send_command_stb    = read_data_stb ||  write_data_stb  || send_user_command_stb;
+//assign  t_send_command_stb    = read_data_stb ||  write_data_stb  || execute_command_stb;
+assign  t_send_command_stb    = execute_command_stb;
 assign  t_send_data_stb       = dma_send_data_stb ||cntrl_send_data_stb;
 
 //IDLE
 assign  idle                  = (cntrl_state  == IDLE) &&
-                                (read_state   == IDLE) &&
                                 (write_state  == IDLE) &&
                                 transport_layer_ready;
 
-//assign  command_layer_ready   = idle & reset_timeout;
 assign  command_layer_ready   = idle;
 
-assign  h2d_command           = write_data_stb        ? `COMMAND_DMA_WRITE_EX:
-                                read_data_stb         ? `COMMAND_DMA_READ_EX :
-                                send_user_command_stb ? hard_drive_command   :
-                                h2d_command;
-
+assign  h2d_command           = hard_drive_command;
 assign  h2d_sector_count      = sector_count;
 assign  h2d_lba               = sector_address;
 
@@ -374,10 +358,7 @@ assign  dev_data_req          = status[`STATUS_DRQ_BIT];
 assign  hard_drive_error      = status[`STATUS_ERR_BIT];
 
 assign  cl_c_state            = cntrl_state;
-assign  cl_r_state            = read_state;
 assign  cl_w_state            = write_state;
-
-//assign  reset_timeout         = (reset_count >=  `RESET_TIMEOUT);
 
 //Synchronous Logic
 
@@ -395,33 +376,28 @@ always @ (posedge clk) begin
     pio_data_ready                <=  0;
     status                        <=  0;
 
-    //reset_count                   <=  0;
-    sata_busy                     <=  1;
+    sata_busy                     <=  0;
+    sync_escape                   <=  0;
   end
   else begin
     t_send_control_stb            <=  0;
     cntrl_send_data_stb           <=  0;
     pio_data_ready                <=  0;
     //Reset Count
-/*
-    if (reset_count < `RESET_TIMEOUT) begin
-      reset_count                 <=  reset_count + 1;
-    end
-
-    if (!reset_timeout) begin
-      cntrl_state                 <=  IDLE;
-    end
-*/
 
     if (t_d2h_reg_stb) begin
+      //Receiving a register strobe from the device
       sata_busy                   <=  0;
       h2d_features                <=  `D2H_REG_FEATURES;
     end
+    /*
     if (t_send_command_stb || t_send_control_stb) begin
       sata_busy                   <=  1;
     end
-    if (send_user_command_stb) begin
-      h2d_features              <=  user_features;
+    */
+    if (execute_command_stb) begin
+      h2d_features                <=  user_features;
+      sata_busy                   <=  1;
     end
 
     case (cntrl_state)
@@ -431,14 +407,12 @@ always @ (posedge clk) begin
         if (command_layer_reset && !srst) begin
           srst                  <=  1;
           t_send_control_stb    <=  1;
-          //reset_count           <=  0;
         end
 
         if (idle) begin
           //The only way to transition to another state is if CL is IDLE
 
           //User Initiated commands
-          //if (!command_layer_reset && srst && reset_timeout) begin
           if (!command_layer_reset && srst) begin
             srst                  <=  0;
             t_send_control_stb    <=  1;
@@ -487,106 +461,50 @@ always @ (posedge clk) begin
 
     if (send_sync_escape) begin
       cntrl_state                 <=  IDLE;
+      sync_escape                 <=  1;
       sata_busy                   <=  0;
-    end
-  end
-end
-
-//Read State Machine
-always @ (posedge clk) begin
-  if (rst || (!linkup)) begin
-    read_state                    <=  IDLE;
-    sync_escape                   <=  0;
-  end
-  else begin
-    sync_escape                   <=  0;
-
-    case (read_state)
-      IDLE: begin
-        if (idle) begin
-          sync_escape             <=  0;
-          //The only way to transition to another state is if CL is IDLE
-          if (read_data_stb) begin
-            //send a request to read data
-            read_state          <=  WAIT_FOR_DATA;
-          end
-        end
-      end
-      WAIT_FOR_DATA: begin
-        //This state seems useless because it only sets a value but the state is used to indicate the system is idle or not
-        /*
-        if (command_layer_reset) begin
-//XXX: Issue a SYNC ESCAPE to cancel a large read request otherwise let it play out
-          //sync_escape         <=  1;
-        end
-      */
-      end
-      default: begin
-        read_state                <=  IDLE;
-      end
-    endcase
-
-    //if (command_layer_reset || !reset_timeout || send_sync_escape) begin
-    if (command_layer_reset || send_sync_escape) begin
-      if (read_state  != IDLE) begin
-        sync_escape               <=  1;
-      end
-      if (send_sync_escape) begin
-        sync_escape               <=  1;
-      end
-      read_state                  <=  IDLE;
-    end
-
-    //If this is received go back to IDLE
-    if (t_d2h_reg_stb) begin
-      read_state                  <=  IDLE;
     end
   end
 end
 
 //Write State Machine
 always @ (posedge clk) begin
-  if (rst || (!linkup)) begin
+  if (rst || !linkup) begin
     write_state                   <=  IDLE;
-
     dma_send_data_stb             <=  0;
-
     enable_tl_data_ready          <=  0;
-
-    dma_act_detected              <=  0;
+    dma_act_detected_en           <=  0;
   end
   else begin
     dma_send_data_stb             <=  0;
 
-    if (enable_tl_data_ready && if_read_activate) begin
-      //Closes the loop on the data write feedback
-      enable_tl_data_ready        <=  0;
-    end
-
     if (t_dma_activate_stb) begin
       //Set an enable signal instead of a strobe so that there is no chance of missing this signal
-      dma_act_detected            <=  1;
+      dma_act_detected_en         <=  1;
     end
 
     case (write_state)
       IDLE: begin
+        enable_tl_data_ready      <=  0;
         if (idle) begin
           //The only way to transition to another state is if CL is IDLE
-          if (write_data_stb) begin
+          //if (write_data_stb) begin
+          if (dma_act_detected_en) begin
             //send a request to write data
-            write_state           <=  WAIT_FOR_DMA_ACT;
+            write_state           <= WAIT_FOR_DMA_ACT;
           end
         end
       end
       WAIT_FOR_DMA_ACT: begin
-        if (dma_act_detected) begin
-          dma_act_detected        <=  0;
+        if (dma_act_detected_en) begin
+          dma_act_detected_en     <=  0;
           enable_tl_data_ready    <=  1;
           write_state             <=  WAIT_FOR_WRITE_DATA;
         end
       end
       WAIT_FOR_WRITE_DATA: begin
         if (if_read_activate) begin
+          enable_tl_data_ready    <=  0;
           write_state             <=  SEND_DATA;
         end
       end
@@ -594,11 +512,7 @@ always @ (posedge clk) begin
         if (transport_layer_ready) begin
           //Send the Data FIS
           dma_send_data_stb       <=  1;
-          write_state             <=  WAIT_FOR_DMA_ACT;
-        end
-      end
-      WAIT_FOR_STATUS: begin
-        if (t_d2h_reg_stb) begin
+          dma_act_detected_en     <=  0;
           write_state             <=  IDLE;
         end
       end
@@ -623,8 +537,5 @@ always @ (posedge clk) begin
   end
 end
 
-
-
 endmodule
-
 

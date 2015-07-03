@@ -24,8 +24,6 @@ SOFTWARE.
 
 
 
-//THERE APPEARS TO BE AN ERROR WHEN WRITING TO A HARDDRIVE, IT MANIFESTS AS A CRC ERROR
-
 `include "sata_defines.v"
 
 `define MIN_HOLDA_TIMEOUT 4
@@ -66,7 +64,7 @@ module sata_link_layer_write(
   input               write_start,
   output  reg         write_strobe,
   input       [31:0]  write_data,
-  input       [31:0]  write_size,  //maximum 2048
+  input       [23:0]  write_size,  //maximum 2048
   input               write_hold,
   output  reg         write_finished,
   output  reg         xmit_error,
@@ -94,8 +92,9 @@ parameter           IDLE            = 4'h0;
 //fstate
 parameter           FIRST_DATA      = 4'h1;
 parameter           ENQUEUE         = 4'h2;
-parameter           WRITE_CRC       = 4'h3;
-parameter           WAIT            = 4'h4;
+parameter           LAST_DATA       = 4'h3;
+parameter           WRITE_CRC       = 4'h4;
+parameter           WAIT            = 4'h5;
 
 //state
 parameter           WRITE_START     = 4'h1;
@@ -232,7 +231,7 @@ assign              write_ready               = phy_ready && !send_holda;
 
 
 //Synchronous Logic
-//Incomming buffer (this is the buffer afte the scrambler and CRC)
+//Incomming buffer (this is the buffer after the scrambler and CRC)
 always @ (posedge clk) begin
   if (rst) begin
     fstate          <=  IDLE;
@@ -258,53 +257,51 @@ always @ (posedge clk) begin
         if (write_start) begin
           //add an extra space for the CRC
           write_strobe    <=  1;
-          data_size       <=  write_size[23:0];
+          data_size       <=  write_size;
           scr_en          <=  1;
           scr_din         <=  0;
           fstate          <=  FIRST_DATA;
         end
       end
       FIRST_DATA: begin
+          //$display ("LLW: Data Size: %d", data_size);
           write_strobe    <=  1;
           wr_en           <=  1;
           scr_en          <=  1;
           scr_din         <=  write_data;
           fstate          <=  ENQUEUE;
-      end
-      ENQUEUE: begin
-        if (data_size == 1) begin
-          in_data_addra   <=  in_data_addra + 24'h1;
-          wr_en           <=  1;
-          scr_en          <=  1;
-          scr_din         <=  crc_dout;
-          fstate          <=  WRITE_CRC;
-        end
-        else begin
-          if (in_data_addra < data_size - 1) begin
-//          if (in_data_addra < data_size) begin
-            //Put all the data into the FIFO
-            write_strobe    <=  1;
-            wr_en           <=  1;
-            scr_en          <=  1;
-            in_data_addra   <=  in_data_addra + 24'h1;
-            scr_din         <=  write_data;
+          if (data_size == 1) begin
+            fstate        <=  LAST_DATA;
           end
           else begin
-            //put the CRC into the FIFO
-            //in_data_addra   <=  in_data_addra + 1;
-            wr_en           <=  1;
-            scr_en          <=  1;
-            in_data_addra   <=  in_data_addra + 24'h1;
-            scr_din         <=  crc_dout;
-            fstate          <=  WRITE_CRC;
+            fstate        <=  ENQUEUE;
           end
+      end
+      ENQUEUE: begin
+        in_data_addra   <=  in_data_addra + 24'h1;
+        wr_en           <=  1;
+        scr_en          <=  1;
+        scr_din         <=  write_data;
+        //write_strobe    <=  1;
+        if (in_data_addra < data_size - 2) begin
+            write_strobe    <=  1;
+        end
+        else begin
+            fstate      <=  LAST_DATA;
         end
       end
+      LAST_DATA: begin
+        in_data_addra       <=  in_data_addra + 24'h1;
+        wr_en               <=  1;
+        scr_en              <=  1;
+        scr_din             <=  crc_dout;
+        fstate              <=  WRITE_CRC;
+      end
       WRITE_CRC: begin
-        fstate            <=  WAIT;
+        fstate              <=  WAIT;
       end
       WAIT: begin
-        scr_rst           <=  1;
+        scr_rst             <=  1;
         if (state == WRITE) begin
           //Because a transaction is in progress and our write buffer is full we can reset the in address to 0
           in_data_addra   <=  0;
@@ -491,9 +488,9 @@ always @ (posedge clk) begin
         end
 
         else begin
-          if (write_count <= data_size + 1) begin
+          if (write_count <= data_size + 1) begin //is this data_size + 1 for the CRC?
             if (buffer_pos > 0) begin
-              buffer_pos      <=  buffer_pos - 4'h1;
+              buffer_pos      <=  buffer_pos - 1;
               if (buffer_pos == 1) begin
                 write_count   <=  write_count + 13'h1;
               end

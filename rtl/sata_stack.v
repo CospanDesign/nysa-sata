@@ -47,10 +47,10 @@ module sata_stack (
 
   output              hard_drive_error,
 
-  input               write_data_stb,
-  input               read_data_stb,
+//  input               write_data_stb,
+//  input               read_data_stb,
 
-  input               send_user_command_stb,
+  input               execute_command_stb,
   input               command_layer_reset,
   input   [7:0]       hard_drive_command,
   output              pio_data_ready,
@@ -81,6 +81,7 @@ module sata_stack (
   output  [1:0]       user_din_ready,
   input   [1:0]       user_din_activate,
   output  [23:0]      user_din_size,
+  output              user_din_empty,
 
   output  [31:0]      user_dout,
   output              user_dout_ready,
@@ -114,7 +115,6 @@ module sata_stack (
 
 //Data Control
   output  [3:0]       dbg_cc_lax_state,
-  output  [3:0]       dbg_cr_lax_state,
   output  [3:0]       dbg_cw_lax_state,
 
   output  [3:0]       dbg_t_lax_state,
@@ -189,7 +189,7 @@ wire                ll_write_start;
 wire                ll_write_strobe;
 wire                ll_write_finished;
 wire        [31:0]  ll_write_data;
-wire        [31:0]  ll_write_size;
+wire        [23:0]  ll_write_size;
 wire                ll_write_hold;
 wire                ll_write_abort;
 
@@ -252,7 +252,7 @@ wire                t_write_start;
 wire                t_write_strobe;
 wire                t_write_finished;
 wire        [31:0]  t_write_data;
-wire        [31:0]  t_write_size;
+wire        [23:0]  t_write_size;
 wire                t_write_hold;
 wire                t_write_abort;
 wire                t_xmit_error;
@@ -283,9 +283,9 @@ sata_command_layer scl (
   .send_sync_escape     (send_sync_escape         ),
   .user_features        (user_features            ),
 
-  .write_data_stb       (write_data_stb           ),
-  .read_data_stb        (read_data_stb            ),
-  .send_user_command_stb(send_user_command_stb    ),
+//  .write_data_stb       (write_data_stb           ),
+//  .read_data_stb        (read_data_stb            ),
+  .execute_command_stb  (execute_command_stb      ),
 
   .command_layer_reset  (command_layer_reset      ),
   .hard_drive_command   (hard_drive_command       ),
@@ -299,6 +299,7 @@ sata_command_layer scl (
   .user_din_ready       (user_din_ready           ),
   .user_din_activate    (user_din_activate        ),
   .user_din_size        (user_din_size            ),
+  .user_din_empty       (user_din_empty           ),
 
   .user_dout            (user_dout                ),
   .user_dout_ready      (user_dout_ready          ),
@@ -365,7 +366,6 @@ sata_command_layer scl (
   .t_of_size            (of_size                  ),
 
   .cl_c_state           (dbg_cc_lax_state         ),
-  .cl_r_state           (dbg_cr_lax_state         ),
   .cl_w_state           (dbg_cw_lax_state         )
 
 );
@@ -575,8 +575,9 @@ sata_phy_layer phy (
 //Asynchronous Logic
 
 //control of data to the platform controller
+//In order to send align primitives the phy must sometimes take over the bus
 assign                tx_dout     = (phy_ready) ? ll_tx_dout  : phy_tx_dout;
-assign                tx_is_k      = (phy_ready) ? ll_tx_is_k   : phy_tx_is_k;
+assign                tx_is_k     = (phy_ready) ? ll_tx_is_k  : phy_tx_is_k;
 
   //no activity on the stack
 
@@ -591,9 +592,7 @@ assign                ll_read_ready         = t_read_ready;
 assign                ll_sync_escape        = t_sync_escape;
 
 assign                t_write_strobe        = ll_write_strobe;
-
 assign                t_write_finished      = ll_write_finished;
-
 
 assign                t_read_strobe         = ll_read_strobe;
 assign                t_read_start          = ll_read_start;
@@ -602,7 +601,6 @@ assign                t_read_data           = ll_read_data;
 assign                t_remote_abort        = ll_remote_abort;
 assign                t_xmit_error          = ll_xmit_error;
 assign                t_read_crc_ok         = ll_read_crc_ok;
-
 
 assign                cl_if_ready             = if_ready;
 assign                if_activate             = cl_if_activate;

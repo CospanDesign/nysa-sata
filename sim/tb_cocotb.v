@@ -13,8 +13,10 @@ output              linkup,           //link is finished
 output              sata_ready,
 output              sata_busy,
 
-input               write_data_stb,
-input               read_data_stb,
+//input               write_data_stb,
+//input               read_data_stb,
+input       [7:0]   hard_drive_command,
+input               execute_command_stb,
 
 input               command_layer_reset,
 input       [15:0]  sector_count,
@@ -88,6 +90,9 @@ reg                 r_u2h_write_enable;
 reg   [23:0]        r_u2h_write_count;
 reg                 r_h2u_read_enable;
 
+reg   [7:0]         r_hard_drive_command;
+reg                 r_execute_command_stb;
+
 wire                hd_read_from_host;
 wire  [31:0]        hd_data_from_host;
 
@@ -119,10 +124,12 @@ wire                i_rx_byte_is_aligned;
 
 
 
+
+
 //There is a bug in COCOTB when stiumlating a signal, sometimes it can be corrupted if not registered
 always @ (*) r_rst                = rst;
-always @ (*) r_write_data_stb     = write_data_stb;
-always @ (*) r_read_data_stb      = read_data_stb;
+//always @ (*) r_write_data_stb     = write_data_stb;
+//always @ (*) r_read_data_stb      = read_data_stb;
 always @ (*) r_command_layer_reset= command_layer_reset;
 always @ (*) r_sector_count       = sector_count;
 always @ (*) r_sector_address     = sector_address;
@@ -135,6 +142,9 @@ always @ (*) r_u2h_write_enable   = u2h_write_enable;
 always @ (*) r_u2h_write_count    = u2h_write_count;
 
 always @ (*) r_h2u_read_enable    = h2u_read_enable;
+
+always @ (*) r_hard_drive_command = hard_drive_command;
+always @ (*) r_execute_command_stb= execute_command_stb;
 
 //Submodules
 
@@ -209,10 +219,10 @@ sata_stack ss (
   .pio_data_ready        (                     ),
 
   //Host to Device Control
-  .hard_drive_command    (8'h00                ),
-  .write_data_stb        (r_write_data_stb     ),
-  .read_data_stb         (r_read_data_stb      ),
-  .send_user_command_stb (1'b0                 ),
+//  .write_data_stb        (r_write_data_stb     ),
+//  .read_data_stb         (r_read_data_stb      ),
+  .hard_drive_command    (r_hard_drive_command ),
+  .execute_command_stb   (r_execute_command_stb),
   .user_features         (16'h0000             ),
   .sector_count          (r_sector_count       ),
   .sector_address        (r_sector_address     ),
@@ -272,8 +282,10 @@ sata_stack ss (
   .comm_wake_detect      (comm_wake_detect     ),
 
 
-  .prim_scrambler_en     (r_prim_scrambler_en  ),
-  .data_scrambler_en     (r_data_scrambler_en  )
+  //.prim_scrambler_en     (r_prim_scrambler_en  ),
+  .prim_scrambler_en     (1'b1                 ),
+  //.data_scrambler_en     (r_data_scrambler_en  )
+  .data_scrambler_en     (1'b1                 )
 );
 
 faux_sata_hd  fshd   (
@@ -297,7 +309,8 @@ faux_sata_hd  fshd   (
 //  .phy_ready             (phy_ready            ),
 
 
-  .dbg_data_scrambler_en (r_data_scrambler_en  ),
+  //.dbg_data_scrambler_en (r_data_scrambler_en  ),
+  .dbg_data_scrambler_en (1'b1                  ),
 
   .dbg_hold              (r_hold               ),
 

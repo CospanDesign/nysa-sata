@@ -50,7 +50,7 @@ module sata_link_layer (
   input               write_start,
   output              write_strobe,
   input     [31:0]    write_data,
-  input     [31:0]    write_size,
+  input     [23:0]    write_size,
   input               write_hold,
   output              write_finished,
   input               write_abort,
