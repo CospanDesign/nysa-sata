@@ -23,8 +23,10 @@ class SataController(object):
     @cocotb.coroutine
     def reset(self):
         self.dut.rst = 0
-        self.dut.write_data_stb = 0
-        self.dut.read_data_stb = 0
+        #self.dut.write_data_stb = 0
+        self.dut.hard_drive_command = 0x00
+        self.dut.execute_command_stb = 0
+        #self.dut.read_data_stb = 0
         self.dut.command_layer_reset = 0
         self.dut.sector_count = 0
         self.dut.sector_address = 0
@@ -69,19 +71,26 @@ class SataController(object):
 
     @cocotb.coroutine
     def write_to_hard_drive(self, length, address):
-        self.dut.u2h_write_enable = 1
+        #self.dut.u2h_write_enable = 1
         self.dut.u2h_write_count = length
         #self.dut.h2u_read_enable = 1
         self.dut.sector_address = address
         #What does this do?
-        self.dut.sector_count = 0
+        self.dut.sector_count = (length / 8192) + 1
+        self.dut.hard_drive_command = 0x35
         print "Write!"
-        self.dut.write_data_stb = 1
+
+
+        yield(self.wait_clocks(10))
+        self.dut.execute_command_stb = 1
+        #self.dut.write_data_stb = 1
         yield(self.wait_clocks(1))
-        self.dut.write_data_stb = 0
+        #self.dut.write_data_stb = 0
+        self.dut.execute_command_stb = 0
         yield(self.wait_for_idle())
         yield(self.wait_clocks(100))
         #self.dut.h2u_read_enable = 0
+        self.dut.hard_drive_command = 0x00
 
     @cocotb.coroutine
     def read_from_hard_drive(self, length, address):
@@ -94,15 +103,20 @@ class SataController(object):
         yield(self.wait_clocks(10))
 
         print "Read..."
-        self.dut.read_data_stb = 1
+        #self.dut.read_data_stb = 1
+        self.dut.hard_drive_command = 0x25
+        self.dut.execute_command_stb = 1
         yield(self.wait_clocks(1))
-        self.dut.read_data_stb = 0
+        #self.dut.read_data_stb = 0
+        self.dut.execute_command_stb = 0
         yield(self.wait_clocks(100))
         while (self.dut.h2u_read_total_count.value < length):
             if self.dut.sata_ready.value == 1:
-                self.dut.read_data_stb = 1
+                #self.dut.read_data_stb = 1
+                self.dut.execute_command_stb = 1
                 yield(self.wait_clocks(1))
-                self.dut.read_data_stb = 0
+                #self.dut.read_data_stb = 0
+                self.dut.execute_command_stb = 0
                 yield(self.wait_clocks(10))
 
             yield(self.wait_clocks(100))

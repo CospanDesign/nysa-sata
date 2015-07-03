@@ -7,7 +7,7 @@ from sata_model import SataController
 
 CLK_PERIOD = 4
 
-@cocotb.test(skip = False)
+@cocotb.test(skip = True)
 def bootup_test(dut):
     """
     Description:
@@ -32,7 +32,7 @@ def bootup_test(dut):
 
 
 
-@cocotb.test(skip = False)
+@cocotb.test(skip = True)
 def short_write_test(dut):
     """
     Description:
@@ -55,7 +55,7 @@ def short_write_test(dut):
     dut.log.info("Wrote 1 piece of data to SATA")
 
 
-@cocotb.test(skip = False)
+@cocotb.test(skip = True)
 def short_read_test(dut):
     """
     Description:
@@ -77,7 +77,7 @@ def short_read_test(dut):
     yield(sata.wait_clocks(200))
 
 
-@cocotb.test(skip = False)
+@cocotb.test(skip = True)
 def long_write_test(dut):
     """
     Description:
@@ -89,18 +89,21 @@ def long_write_test(dut):
         -Number of data should be the same as the write amount
     """
     dut.test_id = 3
-    data_count = 400
+    data_count = 2048
     sata = SataController(dut, CLK_PERIOD)
     yield(sata.reset())
 
     yield(sata.wait_for_idle())
-    yield(sata.write_to_hard_drive(data_count, 0x00))
     yield(sata.wait_clocks(100))
+
+    yield(sata.write_to_hard_drive(data_count, 0x00))
+    dut.u2h_write_enable = 1
+    yield(sata.wait_clocks(10000))
 
     dut.log.info("Wrote %d piece of data to SATA" % data_count)
 
 
-@cocotb.test(skip = False)
+@cocotb.test(skip = True)
 def long_read_test(dut):
     """
     Description:
@@ -124,7 +127,7 @@ def long_read_test(dut):
     yield(sata.wait_for_idle())
     yield(sata.wait_clocks(100))
 
-@cocotb.test(skip = False)
+@cocotb.test(skip = True)
 def long_write_with_easy_back_preassure_test(dut):
     """
     Description:
@@ -142,14 +145,18 @@ def long_write_with_easy_back_preassure_test(dut):
 
     length = 400
     address = 0x00
-
-    dut.write_count = length
-    dut.write_enable = 1
     dut.u2h_write_enable = 1
-    dut.u2h_write_count = length
-    #dut.h2u_read_enable = 1
-    dut.sector_address = address
-    #What does this do?
+    yield(sata.wait_clocks(800))
+
+    #dut.write_count = length
+    #dut.write_enable = 1
+    #dut.u2h_write_enable = 1
+    #dut.u2h_write_count = length
+    ##dut.h2u_read_enable = 1
+    #dut.sector_address = address
+    ##What does this do?
+    yield(sata.write_to_hard_drive(length, address))
+
     dut.sector_count = 0
     dut.write_data_en = 1
     yield(sata.wait_clocks(1))
@@ -158,7 +165,7 @@ def long_write_with_easy_back_preassure_test(dut):
     dut.hold = 1
     yield(sata.wait_clocks(200))
     dut.hold = 0
-    yield(sata.wait_clocks(400))
+    yield(sata.wait_clocks(200))
     dut.hold = 1
     yield(sata.wait_clocks(300))
     dut.hold = 0
@@ -166,7 +173,7 @@ def long_write_with_easy_back_preassure_test(dut):
 
     dut.write_enable = 0
     dut.write_count = 0
-    yield(sata.wait_clocks(100))
+    yield(sata.wait_clocks(2000))
     #dut.h2u_read_enable = 0
     dut.log.info("Wrote %d piece of data to SATA" % length)
 
@@ -193,21 +200,21 @@ def long_write_with_hard_back_preassure_test(dut):
     dut.write_count = length
     dut.write_enable = 1
     dut.u2h_write_enable = 1
-    dut.u2h_write_count = length
+    yield(sata.wait_clocks(1000))
+    #dut.u2h_write_count = length
     #dut.h2u_read_enable = 1
     dut.sector_address = address
     #What does this do?
     dut.sector_count = 0
-    dut.write_data_en = 1
-    yield(sata.wait_clocks(1))
-    dut.write_data_en = 0
+    #dut.write_data_en = 1
+    yield(sata.write_to_hard_drive(length, address))
     yield(sata.wait_clocks(2500))
     dut.hold = 1
     yield(sata.wait_clocks(1))
     dut.hold = 0
-    yield(sata.wait_clocks(400))
+    yield(sata.wait_clocks(394))
     dut.hold = 1
-    yield(sata.wait_clocks(10))
+    yield(sata.wait_clocks(9))
     dut.hold = 0
     yield(sata.wait_clocks(400))
     dut.hold = 1
@@ -226,7 +233,7 @@ def long_write_with_hard_back_preassure_test(dut):
     #dut.h2u_read_enable = 0
     dut.log.info("Wrote %d piece of data to SATA" % length)
 
-@cocotb.test(skip = False)
+@cocotb.test(skip = True)
 def long_write_long_read_back_preassure_test(dut):
     """
     Description:

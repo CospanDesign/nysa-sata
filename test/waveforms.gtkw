@@ -1,25 +1,25 @@
 [*]
 [*] GTKWave Analyzer v3.3.62 (w)1999-2014 BSI
-[*] Tue Jun 16 14:49:11 2015
+[*] Fri Jun 19 14:57:18 2015
 [*]
 [dumpfile] "/home/cospan/Projects/nysa-sata/test/design.vcd"
-[dumpfile_mtime] "Tue Jun 16 14:46:26 2015"
-[dumpfile_size] 41565007
+[dumpfile_mtime] "Fri Jun 19 14:47:16 2015"
+[dumpfile_size] 12294345
 [savefile] "/home/cospan/Projects/nysa-sata/test/waveforms.gtkw"
-[timestart] 0
+[timestart] 7530
 [size] 1918 1059
-[pos] -960 -1
-*-13.520710 60730 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[pos] -1 -1
+*-11.048740 13340 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] tb_cocotb.
 [treeopen] tb_cocotb.fshd.
+[treeopen] tb_cocotb.fshd.fcl.
 [treeopen] tb_cocotb.fshd.fsll.
 [treeopen] tb_cocotb.ss.
 [treeopen] tb_cocotb.ss.scl.fifo_out.
 [treeopen] tb_cocotb.ss.sll.
-[treeopen] tb_cocotb.ss.sll.ccon.
 [treeopen] tb_cocotb.ss.sll.slr.
 [sst_width] 213
-[signals_width] 214
+[signals_width] 246
 [sst_expanded] 1
 [sst_vpaned_height] 313
 @22
@@ -41,21 +41,16 @@ tb_cocotb.ss.clk
 tb_cocotb.ss.rst
 @200
 -
-@800200
--User Interface
-@1000200
--User Interface
-@200
--
 @28
 tb_cocotb.ss.sll.slr.data_valid
 tb_cocotb.ss.sll.slr.send_r_ok
 tb_cocotb.ss.sll.slr.send_r_ip
 tb_cocotb.ss.sll.slr.send_r_err
-@800200
+@c00200
 -SATA Commands
 @28
 tb_cocotb.ss.sata_ready
+tb_cocotb.ss.scl.sata_busy
 @22
 tb_cocotb.ss.sector_count[15:0]
 tb_cocotb.ss.sector_address[47:0]
@@ -65,7 +60,6 @@ tb_cocotb.ss.send_command_stb
 tb_cocotb.ss.scl.t_d2h_reg_stb
 tb_cocotb.ss.scl.t_d2h_data_stb
 @22
-tb_cocotb.ss.scl.read_state[3:0]
 tb_cocotb.fshd.fcl.sector_size[15:0]
 tb_cocotb.fshd.fcl.sector_count[15:0]
 tb_cocotb.ss.scl.sector_count[15:0]
@@ -75,7 +69,6 @@ tb_cocotb.ss.scl.sector_count[15:0]
 tb_cocotb.ss.scl.d2h_error_abrt
 tb_cocotb.ss.scl.d2h_error_amnf
 tb_cocotb.ss.scl.d2h_error_bbk
-tb_cocotb.ss.scl.d2h_error_blk
 tb_cocotb.ss.scl.d2h_error_idnf
 tb_cocotb.ss.scl.d2h_error_mc
 tb_cocotb.ss.scl.d2h_error_mcr
@@ -86,26 +79,68 @@ tb_cocotb.ss.scl.d2h_error_unc
 @28
 tb_cocotb.ss.scl.d2h_status_bsy
 tb_cocotb.ss.scl.d2h_status_corr
-@29
 tb_cocotb.ss.scl.d2h_status_drdy
-@28
 tb_cocotb.ss.scl.d2h_status_drq
 tb_cocotb.ss.scl.d2h_status_dsc
 tb_cocotb.ss.scl.d2h_status_dwf
 tb_cocotb.ss.scl.d2h_status_err
 tb_cocotb.ss.scl.d2h_status_idx
-@1000200
+@1401200
 -SATA Commands
 @200
 -
-@2022
-^1 /home/cospan/Projects/nysa-sata/test/../../../../../tmp/../home/cospan/Projects/nysa-sata/test/../../../../../tmp/../home/cospan/Projects/nysa-sata/test/../../../../../tmp/../home/cospan/Projects/nysa-sata/test/../../../../../tmp/../home/cospan/Projects/nysa-sata/test/primitives.txt
-tb_cocotb.ss.sll.rx_din[31:0]
-^1 /home/cospan/Projects/nysa-sata/test/../../../../../tmp/../home/cospan/Projects/nysa-sata/test/../../../../../tmp/../home/cospan/Projects/nysa-sata/test/../../../../../tmp/../home/cospan/Projects/nysa-sata/test/../../../../../tmp/../home/cospan/Projects/nysa-sata/test/primitives.txt
-tb_cocotb.ss.sll.tx_dout[31:0]
-@1000200
--SATA Stack
 @c00200
+-raw signals
+@2022
+^1 /tmp/../home/cospan/Projects/nysa-sata/test/../../../../../tmp/../home/cospan/Projects/nysa-sata/test/../../../../../tmp/../home/cospan/Projects/nysa-sata/test/../../../../../tmp/../home/cospan/Projects/nysa-sata/test/../../../../../tmp/../home/cospan/Projects/nysa-sata/test/primitives.txt
+tb_cocotb.ss.sll.rx_din[31:0]
+^1 /tmp/../home/cospan/Projects/nysa-sata/test/../../../../../tmp/../home/cospan/Projects/nysa-sata/test/../../../../../tmp/../home/cospan/Projects/nysa-sata/test/../../../../../tmp/../home/cospan/Projects/nysa-sata/test/../../../../../tmp/../home/cospan/Projects/nysa-sata/test/primitives.txt
+tb_cocotb.ss.sll.tx_dout[31:0]
+@1401200
+-raw signals
+@200
+-
+@800200
+-Write Data Path
+@28
+tb_cocotb.ss.scl.execute_command_stb
+@22
+[color] 2
++{SCL Write State} tb_cocotb.ss.scl.write_state[3:0]
+@28
+tb_cocotb.ss.scl.transport_layer_ready
+@c02022
+[color] 2
+^2 /tmp/../home/cospan/Projects/nysa-sata/test/transport_states.txt
++{Transport State} tb_cocotb.ss.stl.state[3:0]
+@28
+[color] 2
+(0)tb_cocotb.ss.stl.state[3:0]
+[color] 2
+(1)tb_cocotb.ss.stl.state[3:0]
+[color] 2
+(2)tb_cocotb.ss.stl.state[3:0]
+[color] 2
+(3)tb_cocotb.ss.stl.state[3:0]
+@1401200
+-group_end
+@22
++{Transport State} tb_cocotb.ss.stl.state[3:0]
+@28
+tb_cocotb.ss.stl.dma_activate_stb
+@2022
+[color] 2
+^3 /tmp/../home/cospan/Projects/nysa-sata/test/llw_states.txt
++{Link Layer Write State} tb_cocotb.ss.sll.slw.state[3:0]
+@22
++{Link Layer Write State} tb_cocotb.ss.sll.slw.state[3:0]
+@28
+tb_cocotb.ss.sll.slw.detect_r_ok
+tb_cocotb.ss.sll.slw.detect_r_err
+@1000200
+-Write Data Path
+-SATA Stack
+@800200
 -Hard Drive
 @28
 [color] 5
@@ -115,13 +150,13 @@ tb_cocotb.fshd.rst
 @200
 -
 @22
-tb_cocotb.fshd.fcl.state[3:0]
++{Faux HD Command Layer State} tb_cocotb.fshd.fcl.state[3:0]
 @28
 tb_cocotb.fshd.fcl.send_data_stb
 tb_cocotb.fshd.fcl.transport_layer_ready
 @200
 -
-@1401200
+@1000200
 -Hard Drive
 @200
 -
