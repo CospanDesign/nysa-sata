@@ -111,8 +111,8 @@ reg         [3:0]   state               = SLEEP_START;
 wire                idle;
 
 reg         [8:0]   byte_count          = 0;
-reg         [15:0]  sector_count        = 0;
-reg         [15:0]  sector_size         = 16'h0000;
+reg         [16:0]  sector_count        = 0;
+reg         [16:0]  sector_size         = 16'h0000;
 
 reg         [15:0]  sleep_count         = 0;
 
@@ -208,35 +208,24 @@ always @ (posedge clk) begin
             d2h_lba                     <=  h2d_lba;
             d2h_sector_count            <=  h2d_sector_count;
 
-            sector_size                 <=  h2d_sector_count;
+            if (h2d_sector_count == 0) begin
+                sector_size             <= 17'h10000;
+            end
+            else begin
+                sector_size             <=  h2d_sector_count;
+            end
 
             case (h2d_command)
               `COMMAND_DMA_READ_EX: begin
                 //send_data_stb           <=  1;
                 sector_count            <=  0;
-                sector_size             <=  h2d_sector_count;
                 state                   <=  SEND_DATA;
               end
-              8'h24: begin
-                //send_data_stb           <=  1;
-                sector_count            <=  0;
-                sector_size             <=  h2d_sector_count;
-                state                   <=  SEND_DATA;
-              end
-
               `COMMAND_DMA_WRITE_EX: begin
                 send_dma_act_stb        <=  1;
                 sector_count            <=  0;
-                sector_size             <=  h2d_sector_count;
                 state                   <=  DMA_READY;
               end
-              8'h34: begin
-                send_dma_act_stb        <=  1;
-                sector_count            <=  0;
-                sector_size             <=  h2d_sector_count;
-                state                   <=  DMA_READY;
-              end
-
               default: begin
                 //unrecognized command
                 $display ("fcl: Unrecognized command from host");
