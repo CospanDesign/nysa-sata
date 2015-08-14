@@ -3,7 +3,7 @@ nysa-sata-stack
 
 Sata stack written in Verilog
 
-Staus: TLDR Version: Simulations are working
+Status: TLDR Version: Simulations are working
 
 This code was written a long time ago and I've learned much more about verilog and project organization
 since then. It has been proven in a Virtex 6 FPGA reading and writing to/from four Sata 2 hard drives at
