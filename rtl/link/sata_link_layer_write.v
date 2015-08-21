@@ -30,7 +30,7 @@ SOFTWARE.
 `define DHOLD_DELAY       8
 `define DHOLD_DELAY_EN    0
 
-module sata_link_layer_write(
+module sata_link_layer_write (
 
   input               rst,            //reset
   input               clk,
@@ -83,24 +83,23 @@ module sata_link_layer_write(
   output  reg [12:0]  d_count,
   output  reg [12:0]  write_count,
   output  reg [3:0]   buffer_pos
-
 );
 
 //Primatives
-parameter           IDLE            = 4'h0;
+localparam           IDLE            = 4'h0;
 
 //fstate
-parameter           FIRST_DATA      = 4'h1;
-parameter           ENQUEUE         = 4'h2;
-parameter           LAST_DATA       = 4'h3;
-parameter           WRITE_CRC       = 4'h4;
-parameter           WAIT            = 4'h5;
+localparam           FIRST_DATA      = 4'h1;
+localparam           ENQUEUE         = 4'h2;
+localparam           LAST_DATA       = 4'h3;
+localparam           WRITE_CRC       = 4'h4;
+localparam           WAIT            = 4'h5;
 
 //state
-parameter           WRITE_START     = 4'h1;
-parameter           WRITE           = 4'h2;
-parameter           WRITE_END       = 4'h3;
-parameter           WAIT_RESPONSE   = 4'h4;
+localparam           WRITE_START     = 4'h1;
+localparam           WRITE           = 4'h2;
+localparam           WRITE_END       = 4'h3;
+localparam           WAIT_RESPONSE   = 4'h4;
 
 //Registers/Wires
 reg         [31:0]  post_align_data;
@@ -175,7 +174,6 @@ blk_mem # (
   .doutb          (rd_dout              )
 );
 
-
 scrambler scr (
   .rst            (scr_rst              ),
   .clk            (clk                  ),
@@ -184,7 +182,8 @@ scrambler scr (
   .din            (scr_din              ),
   .dout           (scr_dout             )
 );
-crc c (
+
+crc crc_inst (
 //reset the CRC any time we're in IDLE
   .rst            (scr_rst              ),
   .clk            (clk                  ),
