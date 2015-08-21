@@ -32,7 +32,7 @@ def bootup_test(dut):
 
 
 
-@cocotb.test(skip = True)
+@cocotb.test(skip = False)
 def short_write_test(dut):
     """
     Description:
