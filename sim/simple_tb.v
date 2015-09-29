@@ -1,7 +1,7 @@
 `timescale 1ns/1ps
 
 `define SCLK_HALF_PERIOD 3
-`define DCLK_HALF_PERIOD 4
+`define DCLK_HALF_PERIOD 3
 //`define DCLK_HALF_PERIOD 2  //Change to any frequency you want
 
 `define SCLK_PERIOD (2 * `SCLK_HALF_PERIOD)
@@ -21,6 +21,8 @@ reg                 rst           = 0;            //reset
 reg                 clk           = 0;
 reg                 sata_clk      = 0;
 reg                 data_clk      = 0;
+
+wire                command_layer_reset;
 
 wire                linkup;           //link is finished
 wire                sata_ready;
@@ -80,7 +82,7 @@ wire        [31:0]  hd_data_to_host;
 
 reg         [23:0]  din_count;
 reg         [23:0]  dout_count;
-reg                 hold;
+reg                 hold = 0;
 
 reg                 single_rdwr = 0;
 reg         [7:0]   sata_command = 0;
@@ -109,6 +111,9 @@ reg                 r_u2h_write_enable = 0;
 reg                 r_h2u_read_enable = 0;
 
 reg                 sata_execute_command_stb = 0;
+wire        [31:0]  hd_data_from_host;
+wire                hd_read_from_host;
+wire                hd_write_to_host;
 
 //hd data reader core
 hd_data_reader user_2_hd_reader(
@@ -176,7 +181,7 @@ sata_stack ss (
 
   //Data from host to the hard drive path
   .data_in_clk            (data_clk               ),  //Any clock to send data to the hard drive
-  .data_in_clk_valid      (data_in_clk_valid      ),  //the data in clock is valid
+  .data_in_clk_valid      (1'b1                   ),  //the data in clock is valid
   .user_din               (user_din               ),  //32-bit data to clock into FIFO
   .user_din_stb           (user_din_stb           ),  //Strobe to clock data into FIFO
   .user_din_ready         (user_din_ready         ),  //If one of the 2 in FIFOs are ready
@@ -185,8 +190,8 @@ sata_stack ss (
   .user_din_empty         (user_din_empty         ),
 
   //Data from hard drive to host path
-  .data_out_clk           (clk                    ),
-  .data_out_clk_valid     (data_out_clk_valid     ),  //the data out clock is valid
+  .data_out_clk           (data_clk               ),
+  .data_out_clk_valid     (1'b1                   ),  //the data out clock is valid
   .user_dout              (user_dout              ),  //Actual data the comes from FIFO
   .user_dout_ready        (user_dout_ready        ),  //The output FIFO is ready (see below for how to use)
   .user_dout_activate     (user_dout_activate     ),  //Activate a FIFO (See below for an example on how to use)
@@ -340,6 +345,7 @@ assign  data_scrambler_en             = 1;
 assign  platform_ready                = 1;
 //assign  hd_data_to_host               = 32'h01234567;
 assign  send_sync_escape              = 1'b0;
+assign command_layer_reset            = 1'b0;
 
 
 //Synchronous Logic
@@ -350,12 +356,12 @@ always #1 clk                         = ~clk;
 //Simulation Control
 initial begin
   rst <=  1;
-  $dumpfile ("design.vcd");
-  $dumpvars(0, simple_tb);
+  //$dumpfile ("design.vcd");
+  //$dumpvars(0, simple_tb);
   #(20 * `SCLK_PERIOD);
   rst <=  0;
-  #40000;
-  $finish();
+  //#(20 * `SCLK_PERIOD);
+  //$finish();
 end
 
 
@@ -381,7 +387,8 @@ initial begin
   end
   //Send a command
 //  #(700 * `SCLK_PERIOD);
-  #(563 * `SCLK_PERIOD);
+  //#(563 * `SCLK_PERIOD);
+  #(100 * `SCLK_PERIOD);
   sata_command                      <=  8'h35;  //Write
   sector_count                      <=  1;
   #(1 * `SCLK_PERIOD);
@@ -393,7 +400,7 @@ initial begin
 
   #(1000 * `SCLK_PERIOD);
   while (sata_busy) begin
-    #1;
+  #(1 * `SCLK_PERIOD);
   end
   #(100 * `SCLK_PERIOD);
   r_u2h_write_enable                <=  0;
@@ -418,6 +425,8 @@ initial begin
     #1;
   end
   r_h2u_read_enable                 <=  0;
+  
+  //$finish();
 end
 
 /*
