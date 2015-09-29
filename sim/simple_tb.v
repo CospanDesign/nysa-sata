@@ -30,25 +30,9 @@ wire                send_sync_escape;
 wire                hard_drive_error;
 wire                pio_data_ready;
 
-
-/*
-reg                 write_data_en;
-reg                 read_data_en;
-*/
-
 reg                 soft_reset_en   = 0;
 reg         [15:0]  sector_count    = 8;
 reg         [47:0]  sector_address  = 0;
-
-wire                d2h_interrupt;
-wire                d2h_notification;
-wire        [3:0]   d2h_port_mult;
-wire        [7:0]   d2h_device;
-wire        [47:0]  d2h_lba;
-wire        [15:0]  d2h_sector_count;
-wire        [7:0]   d2h_status;
-wire        [7:0]   d2h_error;
-
 
 reg         [31:0]  user_din;
 reg                 user_din_stb;
@@ -377,8 +361,6 @@ end
 initial begin
   sector_address                    <=  0;
   sector_count                      <=  8;
-  write_data_en                     <=  0;
-  read_data_en                      <=  0;
   single_rdwr                       <=  0;
 
   sata_command                      <=  0;
@@ -389,19 +371,19 @@ initial begin
 
   #(20 * `SCLK_PERIOD);
   while (!linkup) begin
-    #(1 * `SCLK_PRIOD);
+    #(1 * `SCLK_PERIOD);
   end
-  while (sat_busy) begin
-    #(1 * `SCLK_PRIOD);
+  while (sata_busy) begin
+    #(1 * `SCLK_PERIOD);
   end
   //Send a command
 //  #(700 * `SCLK_PERIOD);
   #(563 * `SCLK_PERIOD);
   sata_command                      <=  8'h35;  //Write
   sector_count                      <=  1;
-  #(1 * `SCLK_PRIOD);
+  #(1 * `SCLK_PERIOD);
   sata_execute_command_stb          <=  1;
-  #(1 * `SCLK_PRIOD);
+  #(1 * `SCLK_PERIOD);
   sata_execute_command_stb          <=  0;
   r_u2h_write_enable                <=  1;      //Read Data on the Hard Drive Side
 
@@ -421,14 +403,13 @@ initial begin
   #(1000 * `SCLK_PERIOD);
   sector_count                      <=  2;
   sata_command                      <=  8'h25;  //Read
-  #(1 * `SCLK_PRIOD);
+  #(1 * `SCLK_PERIOD);
   sata_execute_command_stb          <=  1;
-  #(1 * `SCLK_PRIOD);
+  #(1 * `SCLK_PERIOD);
   sata_execute_command_stb          <=  0;
 
 
   #(1000 * `SCLK_PERIOD);
-  //read_data_en                     <=  1;
   #(20 * `SCLK_PERIOD);
   while (sata_busy) begin
     #1;
@@ -436,10 +417,11 @@ initial begin
   r_h2u_read_enable                 <=  0;
 end
 
+/*
 initial begin
   hold                              <=  0;
   #(20 * `SCLK_PERIOD);
-  while (!write_data_en) begin
+  while (!sata_busy) begin
     #1;
  end
   #(800* `SCLK_PERIOD);
@@ -447,6 +429,7 @@ initial begin
   #(100 * `SCLK_PERIOD);
   hold                              <=  0;
 end
+*/
 /*
 //inject a hold
 initial begin
@@ -467,8 +450,6 @@ end
 initial begin
   sector_address                    <=  0;
   sector_count                      <=  0;
-  write_data_en                     <=  0;
-  read_data_en                      <=  0;
 
   #(20 * `SCLK_PERIOD);
   while (!linkup) begin
