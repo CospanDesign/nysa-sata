@@ -108,6 +108,8 @@ wire        [7:0]   d2h_error;
 reg                 r_u2h_write_enable = 0;
 reg                 r_h2u_read_enable = 0;
 
+reg                 sata_execute_command_stb = 0;
+
 //hd data reader core
 hd_data_reader user_2_hd_reader(
   .clk                   (clk                  ),
@@ -368,6 +370,7 @@ initial begin
 
   r_u2h_write_enable                <=  0;
   r_h2u_read_enable                 <=  0;
+  sata_execute_command_stb          <=  0;
 
   #(20 * `SCLK_PERIOD);
   while (!linkup) begin
