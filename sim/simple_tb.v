@@ -376,7 +376,7 @@ initial begin
   while (!linkup) begin
     #(1 * `SCLK_PERIOD);
   end
-  while (sata_busy) begin
+  while (!sata_ready) begin
     #(1 * `SCLK_PERIOD);
   end
   //Send a command
