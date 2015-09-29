@@ -52,13 +52,13 @@ wire                link_layer_ready;
 wire                phy_ready;
 
 wire    [31:0]      tx_dout;
-wire                tx_isk;
+wire                tx_is_k;
 wire                tx_comm_reset;
 wire                tx_comm_wake;
 wire                tx_elec_idle;
 
 wire    [31:0]      rx_din;
-wire    [3:0]       rx_isk;
+wire    [3:0]       rx_is_k;
 wire                rx_elec_idle;
 wire                comm_init_detect;
 wire                comm_wake_detect;
@@ -199,19 +199,19 @@ sata_stack ss (
   .phy_error              (1'b0                   ),  //an error on the transcievers has occured
 
   //Interface to the gigabit transcievers
-  .tx_dout                (o_tx_dout              ),
-  .tx_is_k                (o_tx_is_k              ),
-  .tx_comm_reset          (o_tx_comm_reset        ),
-  .tx_comm_wake           (o_tx_comm_wake         ),
-  .tx_elec_idle           (o_tx_elec_idle         ),
-  .tx_oob_complete        (i_tx_oob_complete      ),
+  .tx_dout                (tx_dout              ),
+  .tx_is_k                (tx_is_k              ),
+  .tx_comm_reset          (tx_comm_reset        ),
+  .tx_comm_wake           (tx_comm_wake         ),
+  .tx_elec_idle           (tx_elec_idle         ),
+  .tx_oob_complete        (1'b1                 ),
 
-  .rx_din                 (i_rx_din               ),
-  .rx_is_k                (i_rx_is_k              ),
-  .rx_elec_idle           (i_rx_elec_idle         ),
-  .rx_byte_is_aligned     (i_rx_byte_is_aligned   ),
-  .comm_init_detect       (i_comm_init_detect     ),
-  .comm_wake_detect       (i_comm_wake_detect     ),
+  .rx_din                 (rx_din               ),
+  .rx_is_k                (rx_is_k              ),
+  .rx_elec_idle           (1'b0                 ),
+  .rx_byte_is_aligned     (rx_byte_is_aligned   ),
+  .comm_init_detect       (comm_init_detect     ),
+  .comm_wake_detect       (comm_wake_detect     ),
 
   //These should be set to 1 for normal operations, while debugging you can set to 0 to help debug things
   .prim_scrambler_en      (prim_scrambler_en      ),
@@ -269,10 +269,10 @@ faux_sata_hd  fshd   (
   .rst                   (rst                     ),
   .clk                   (sata_clk                ),
   .tx_dout               (rx_din                  ),
-  .tx_isk                (rx_isk                  ),
+  .tx_is_k               (rx_is_k                 ),
 
   .rx_din                (tx_dout                 ),
-  .rx_isk                ({3'b000, tx_isk}        ),
+  .rx_is_k               ({3'b000, tx_is_k}       ),
   .rx_is_elec_idle       (tx_elec_idle            ),
   .rx_byte_is_aligned    (rx_byte_is_aligned      ),
 
