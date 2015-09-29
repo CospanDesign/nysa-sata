@@ -1,8 +1,11 @@
 `timescale 1ns/1ps
 
 `define SCLK_HALF_PERIOD 3
+`define DCLK_HALF_PERIOD 4
+//`define DCLK_HALF_PERIOD 2  //Change to any frequency you want
 
 `define SCLK_PERIOD (2 * `SCLK_HALF_PERIOD)
+`define DCLK_PERIOD (2 * `DCLK_HALF_PERIOD)
 
 `define STARTUP_TIMEOUT   32'h00000100
 `define ERROR_TIMEOUT     32'h00000100
@@ -15,15 +18,23 @@ module simple_tb ();
 //Parameters
 //Registers/Wires
 reg                 rst           = 0;            //reset
+reg                 clk           = 0;
 reg                 sata_clk      = 0;
+reg                 data_clk      = 0;
 
 wire                linkup;           //link is finished
 wire                sata_ready;
-wire                busy;
+wire                sata_busy;
+
+wire                send_sync_escape;
+wire                hard_drive_error;
+wire                pio_data_ready;
 
 
+/*
 reg                 write_data_en;
 reg                 read_data_en;
+*/
 
 reg                 soft_reset_en   = 0;
 reg         [15:0]  sector_count    = 8;
@@ -78,6 +89,7 @@ wire                tx_set_elec_idle;
 wire                rx_is_elec_idle;
 wire                hd_ready;
 wire                platform_ready;
+wire                platform_error;
 
 //Debug
 wire        [31:0]  hd_data_to_host;
@@ -87,143 +99,250 @@ reg         [23:0]  dout_count;
 reg                 hold;
 
 reg                 single_rdwr = 0;
+reg         [7:0]   sata_command = 0;
+reg         [15:0]  user_features = 0;
 
 
-reg                 clk         = 0;
+wire                dma_activate_stb;
+wire                d2h_reg_stb;
+wire                pio_setup_stb;
+wire                d2h_data_stb;
+wire                dma_setup_stb;
+wire                set_device_bits_stb;
+
+wire        [7:0]   d2h_fis;
+wire                d2h_interrupt;
+wire                d2h_notification;
+wire        [3:0]   d2h_port_mult;
+wire        [7:0]   d2h_device;
+wire        [47:0]  d2h_lba;
+wire        [15:0]  d2h_sector_count;
+wire        [7:0]   d2h_status;
+wire        [7:0]   d2h_error;
 
 
+reg                 r_u2h_write_enable = 0;
+reg                 r_h2u_read_enable = 0;
 
+//hd data reader core
+hd_data_reader user_2_hd_reader(
+  .clk                   (clk                  ),
+  .rst                   (rst                  ),
+  .enable                (r_u2h_write_enable   ),
+  .error                 (u2h_read_error       ),
+
+  .hd_read_from_host     (hd_read_from_host    ),
+  .hd_data_from_host     (hd_data_from_host    )
+);
+
+//hd data writer core
+hd_data_writer hd_2_user_generator(
+  .clk                   (clk                  ),
+  .rst                   (rst                  ),
+  .enable                (r_h2u_read_enable    ),
+  .data                  (hd_data_to_host      ),
+  .strobe                (hd_write_to_host     )
+);
 
 //Submodules
-
 sata_stack ss (
-  .rst                   (rst                  ),  //reset
-  .clk                   (sata_clk             ),  //clock used to run the stack
-  .data_in_clk           (sata_clk             ),
-  .data_out_clk          (sata_clk             ),
+  .clk                    (sata_clk               ),  //clock used to run the stack
+  .rst                    (rst                    ),  //reset
 
-  .platform_ready        (platform_ready       ),  //the underlying physical platform is
-  .linkup                (linkup               ),  //link is finished
-  .sata_ready            (sata_ready           ),
+  .command_layer_reset    (command_layer_reset    ),  //Reset the command layer and send a software reset to the hard drive
 
+  .platform_ready         (platform_ready         ),  //the underlying physical platform is ready
+  .platform_error         (platform_error         ),  //some bad thing happend at the transceiver level
+  .linkup                 (linkup                 ),  //link is finished
 
-  .busy                  (busy                 ),
+  .sata_ready             (sata_ready             ),  //Hard drive is ready for commands
+  .sata_busy              (sata_busy              ),  //Hard drive is busy executing commands
 
-
-  .write_data_en         (write_data_en        ),
-  .single_rdwr           (single_rdwr          ),
-  .read_data_en          (read_data_en         ),
-
-  .send_user_command_stb (1'b0                 ),
-  .soft_reset_en         (soft_reset_en        ),
-  .command               (1'b0                 ),
-
-  .sector_count          (sector_count         ),
-  .sector_address        (sector_address       ),
-
-  .d2h_interrupt         (d2h_interrupt        ),
-  .d2h_notification      (d2h_notification     ),
-  .d2h_port_mult         (d2h_port_mult        ),
-  .d2h_device            (d2h_device           ),
-  .d2h_lba               (d2h_lba              ),
-  .d2h_sector_count      (d2h_sector_count     ),
-  .d2h_status            (d2h_status           ),
-  .d2h_error             (d2h_error            ),
-
-  .user_din              (user_din             ),
-  .user_din_stb          (user_din_stb         ),
-  .user_din_ready        (user_din_ready       ),
-  .user_din_activate     (user_din_activate    ),
-  .user_din_size         (user_din_size        ),
-
-  .user_dout             (user_dout            ),
-  .user_dout_ready       (user_dout_ready      ),
-  .user_dout_activate    (user_dout_activate   ),
-  .user_dout_stb         (user_dout_stb        ),
-  .user_dout_size        (user_dout_size       ),
-
-  .transport_layer_ready (transport_layer_ready),
-  .link_layer_ready      (link_layer_ready     ),
-  .phy_ready             (phy_ready            ),
-
-  .tx_dout               (tx_dout              ),
-  .tx_isk                (tx_isk               ),
-  .tx_comm_reset         (tx_comm_reset        ),
-  .tx_comm_wake          (tx_comm_wake         ),
-  .tx_elec_idle          (tx_elec_idle         ),
-
-  .rx_din                (rx_din               ),
-  .rx_isk                (rx_isk               ),
-  .rx_elec_idle          (rx_elec_idle         ),
-  .comm_init_detect      (comm_init_detect     ),
-  .comm_wake_detect      (comm_wake_detect     ),
-  .rx_byte_is_aligned    (rx_byte_is_aligned   ),
+  .send_sync_escape       (send_sync_escape       ),  //This is a way to escape from a running transaction
+  .hard_drive_error       (hard_drive_error       ),
 
 
-  .prim_scrambler_en     (prim_scrambler_en    ),
-  .data_scrambler_en     (data_scrambler_en    )
+  .pio_data_ready         (pio_data_ready         ),  //Peripheral IO has some data ready
+
+  //Host to Device Control
+  .hard_drive_command     (sata_command           ),  //Hard Drive commands EX: DMA Read 0x25, DMA Write 0x35
+  .execute_command_stb    (sata_execute_command_stb),
+  .user_features          (user_features          ),
+  .sector_count           (sector_count           ),
+  .sector_address         (sector_address         ),
+
+  .dma_activate_stb       (dma_activate_stb       ),
+  .d2h_reg_stb            (d2h_reg_stb            ),
+  .pio_setup_stb          (pio_setup_stb          ),
+  .d2h_data_stb           (d2h_data_stb           ),
+  .dma_setup_stb          (dma_setup_stb          ),
+  .set_device_bits_stb    (set_device_bits_stb    ),
+
+  .d2h_fis                (d2h_fis                ),
+  .d2h_interrupt          (d2h_interrupt          ),
+  .d2h_notification       (d2h_notification       ),
+  .d2h_port_mult          (d2h_port_mult          ),
+  .d2h_device             (d2h_device             ),
+  .d2h_lba                (d2h_lba                ),
+  .d2h_sector_count       (d2h_sector_count       ),
+  .d2h_status             (d2h_status             ),
+  .d2h_error              (d2h_error              ),
+
+  //Data from host to the hard drive path
+  .data_in_clk            (data_clk               ),  //Any clock to send data to the hard drive
+  .data_in_clk_valid      (data_in_clk_valid      ),  //the data in clock is valid
+  .user_din               (user_din               ),  //32-bit data to clock into FIFO
+  .user_din_stb           (user_din_stb           ),  //Strobe to clock data into FIFO
+  .user_din_ready         (user_din_ready         ),  //If one of the 2 in FIFOs are ready
+  .user_din_activate      (user_din_activate      ),  //Activate one of the 2 FIFOs
+  .user_din_size          (user_din_size          ),  //Number of available spots within the FIFO
+  .user_din_empty         (user_din_empty         ),
+
+  //Data from hard drive to host path
+  .data_out_clk           (clk                    ),
+  .data_out_clk_valid     (data_out_clk_valid     ),  //the data out clock is valid
+  .user_dout              (user_dout              ),  //Actual data the comes from FIFO
+  .user_dout_ready        (user_dout_ready        ),  //The output FIFO is ready (see below for how to use)
+  .user_dout_activate     (user_dout_activate     ),  //Activate a FIFO (See below for an example on how to use)
+  .user_dout_stb          (user_dout_stb          ),  //Strobe the data out of the FIFO (first word is available before strobe)
+  .user_dout_size         (user_dout_size         ),  //Number of 32-bit words available
+
+  .transport_layer_ready  (transport_layer_ready  ),
+  .link_layer_ready       (link_layer_ready       ),
+  .phy_ready              (phy_ready              ),  //sata phy layer has linked up and communication simple comm started
+  .phy_error              (1'b0                   ),  //an error on the transcievers has occured
+
+  //Interface to the gigabit transcievers
+  .tx_dout                (o_tx_dout              ),
+  .tx_is_k                (o_tx_is_k              ),
+  .tx_comm_reset          (o_tx_comm_reset        ),
+  .tx_comm_wake           (o_tx_comm_wake         ),
+  .tx_elec_idle           (o_tx_elec_idle         ),
+  .tx_oob_complete        (i_tx_oob_complete      ),
+
+  .rx_din                 (i_rx_din               ),
+  .rx_is_k                (i_rx_is_k              ),
+  .rx_elec_idle           (i_rx_elec_idle         ),
+  .rx_byte_is_aligned     (i_rx_byte_is_aligned   ),
+  .comm_init_detect       (i_comm_init_detect     ),
+  .comm_wake_detect       (i_comm_wake_detect     ),
+
+  //These should be set to 1 for normal operations, while debugging you can set to 0 to help debug things
+  .prim_scrambler_en      (prim_scrambler_en      ),
+  .data_scrambler_en      (data_scrambler_en      ),
+
+  .dbg_cc_lax_state       (                       ),
+  .dbg_cw_lax_state       (command_write_state    ),
+
+  .dbg_t_lax_state        (transport_state        ),
+
+  .dbg_li_lax_state       (                       ),
+  .dbg_lr_lax_state       (                       ),
+  .dbg_lw_lax_state       (ll_write_state         ),
+  .dbg_lw_lax_fstate      (                       ),
+
+
+  .dbg_ll_write_ready     (                       ),
+  .dbg_ll_paw             (                       ),
+  .dbg_ll_send_crc        (                       ),
+
+  .oob_state              (oob_state              ),
+
+  .dbg_detect_sync        (                       ),
+  .dbg_detect_r_rdy       (                       ),
+  .dbg_detect_r_ip        (                       ),
+  .dbg_detect_r_ok        (dbg_detect_r_ok        ),
+  .dbg_detect_r_err       (dbg_detect_r_err       ),
+  .dbg_detect_x_rdy       (                       ),
+  .dbg_detect_sof         (                       ),
+  .dbg_detect_eof         (                       ),
+  .dbg_detect_wtrm        (                       ),
+  .dbg_detect_cont        (                       ),
+  .dbg_detect_hold        (                       ),
+  .dbg_detect_holda       (                       ),
+  .dbg_detect_align       (                       ),
+  .dbg_detect_preq_s      (                       ),
+  .dbg_detect_preq_p      (                       ),
+  .dbg_detect_xrdy_xrdy   (                       ),
+
+  .dbg_send_holda         (                       ),
+
+//  .slw_in_data_addra      (slw_in_data_addra      ),
+//  .slw_d_count            (slw_d_count            ),
+//  .slw_write_count        (slw_write_count        ),
+//  .slw_buffer_pos         (slw_buffer_pos         )
+
+  .slw_in_data_addra      (                       ),
+  .slw_d_count            (                       ),
+  .slw_write_count        (                       ),
+  .slw_buffer_pos         (                       )
+
 );
 
 faux_sata_hd  fshd   (
-  .rst                   (rst                  ),
-  .clk                   (sata_clk             ),
-  .tx_dout               (rx_din               ),
-  .tx_isk                (rx_isk               ),
+  .rst                   (rst                     ),
+  .clk                   (sata_clk                ),
+  .tx_dout               (rx_din                  ),
+  .tx_isk                (rx_isk                  ),
 
-  .rx_din                (tx_dout              ),
-  .rx_isk                ({3'b000, tx_isk}     ),
-  .rx_is_elec_idle       (tx_elec_idle         ),
-  .rx_byte_is_aligned    (rx_byte_is_aligned   ),
+  .rx_din                (tx_dout                 ),
+  .rx_isk                ({3'b000, tx_isk}        ),
+  .rx_is_elec_idle       (tx_elec_idle            ),
+  .rx_byte_is_aligned    (rx_byte_is_aligned      ),
 
-  .comm_reset_detect     (tx_comm_reset        ),
-  .comm_wake_detect      (tx_comm_wake         ),
+  .comm_reset_detect     (tx_comm_reset           ),
+  .comm_wake_detect      (tx_comm_wake            ),
 
-  .tx_comm_reset         (comm_init_detect     ),
-  .tx_comm_wake          (comm_wake_detect     ),
+  .tx_comm_reset         (comm_init_detect        ),
+  .tx_comm_wake          (comm_wake_detect        ),
 
-  .hd_ready              (hd_ready             ),
-//  .phy_ready             (phy_ready            ),
+  .hd_ready              (hd_ready                ),
+//  .phy_ready             (phy_ready              ),
 
 
-  .dbg_data_scrambler_en (data_scrambler_en    ),
+  .dbg_data_scrambler_en (data_scrambler_en       ),
 
-  .dbg_hold              (hold                ),
+  .dbg_hold              (hold                    ),
 
-  .dbg_ll_write_start    (0                    ),
-  .dbg_ll_write_data     (0                    ),
-  .dbg_ll_write_size     (0                    ),
-  .dbg_ll_write_hold     (0                    ),
-  .dbg_ll_write_abort    (0                    ),
+  .dbg_ll_write_start    (0                       ),
+  .dbg_ll_write_data     (0                       ),
+  .dbg_ll_write_size     (0                       ),
+  .dbg_ll_write_hold     (0                       ),
+  .dbg_ll_write_abort    (0                       ),
 
-  .dbg_ll_read_ready     (0                    ),
-  .dbg_t_en              (0                    ),
+  .dbg_ll_read_ready     (0                       ),
+  .dbg_t_en              (0                       ),
 
-  .dbg_send_reg_stb      (0                    ),
-  .dbg_send_dma_act_stb  (0                    ),
-  .dbg_send_data_stb     (0                    ),
-  .dbg_send_pio_stb      (0                    ),
-  .dbg_send_dev_bits_stb (0                    ),
+  .dbg_send_reg_stb      (0                       ),
+  .dbg_send_dma_act_stb  (0                       ),
+  .dbg_send_data_stb     (0                       ),
+  .dbg_send_pio_stb      (0                       ),
+  .dbg_send_dev_bits_stb (0                       ),
 
-  .dbg_pio_transfer_count(0                    ),
-  .dbg_pio_direction     (0                    ),
-  .dbg_pio_e_status      (0                    ),
+  .dbg_pio_transfer_count(0                       ),
+  .dbg_pio_direction     (0                       ),
+  .dbg_pio_e_status      (0                       ),
 
-  .dbg_d2h_interrupt     (0                    ),
-  .dbg_d2h_notification  (0                    ),
-  .dbg_d2h_status        (0                    ),
-  .dbg_d2h_error         (0                    ),
-  .dbg_d2h_port_mult     (0                    ),
-  .dbg_d2h_device        (0                    ),
-  .dbg_d2h_lba           (0                    ),
-  .dbg_d2h_sector_count  (0                    ),
+  .dbg_d2h_interrupt     (0                       ),
+  .dbg_d2h_notification  (0                       ),
+  .dbg_d2h_status        (0                       ),
+  .dbg_d2h_error         (0                       ),
+  .dbg_d2h_port_mult     (0                       ),
+  .dbg_d2h_device        (0                       ),
+  .dbg_d2h_lba           (0                       ),
+  .dbg_d2h_sector_count  (0                       ),
 
-  .dbg_cl_if_data        (0                    ),
-  .dbg_cl_if_ready       (0                    ),
-  .dbg_cl_if_size        (0                    ),
-  .dbg_cl_of_ready       (0                    ),
-  .dbg_cl_of_size        (0                    ),
-  .hd_data_to_host       (hd_data_to_host      )
+  .dbg_cl_if_data        (0                       ),
+  .dbg_cl_if_ready       (0                       ),
+  .dbg_cl_if_size        (0                       ),
+  .dbg_cl_of_ready       (0                       ),
+  .dbg_cl_of_size        (0                       ),
 
+  .hd_read_from_host     (hd_read_from_host       ),
+  .hd_data_from_host     (hd_data_from_host       ),
+
+  .hd_write_to_host      (hd_write_to_host        ),
+  .hd_data_to_host       (hd_data_to_host         )
 
 );
 
@@ -233,11 +352,13 @@ faux_sata_hd  fshd   (
 assign  prim_scrambler_en             = 1;
 assign  data_scrambler_en             = 1;
 assign  platform_ready                = 1;
-assign  hd_data_to_host               = 32'h01234567;
+//assign  hd_data_to_host               = 32'h01234567;
+assign  send_sync_escape              = 1'b0;
 
 
 //Synchronous Logic
 always #`SCLK_HALF_PERIOD sata_clk    = ~sata_clk;
+always #`DCLK_HALF_PERIOD data_clk    = ~data_clk;
 always #1 clk                         = ~clk;
 
 //Simulation Control
@@ -260,41 +381,59 @@ initial begin
   read_data_en                      <=  0;
   single_rdwr                       <=  0;
 
+  sata_command                      <=  0;
+  user_features                     <=  0;
+
+  r_u2h_write_enable                <=  0;
+  r_h2u_read_enable                 <=  0;
+
   #(20 * `SCLK_PERIOD);
   while (!linkup) begin
-    #1;
+    #(1 * `SCLK_PRIOD);
   end
-  while (busy) begin
-    #1;
+  while (sat_busy) begin
+    #(1 * `SCLK_PRIOD);
   end
   //Send a command
 //  #(700 * `SCLK_PERIOD);
   #(563 * `SCLK_PERIOD);
-  write_data_en                     <=  1;
+  sata_command                      <=  8'h35;  //Write
+  sector_count                      <=  1;
+  #(1 * `SCLK_PRIOD);
+  sata_execute_command_stb          <=  1;
+  #(1 * `SCLK_PRIOD);
+  sata_execute_command_stb          <=  0;
+  r_u2h_write_enable                <=  1;      //Read Data on the Hard Drive Side
+
+
   #(1000 * `SCLK_PERIOD);
-  while (!busy) begin
+  while (sata_busy) begin
     #1;
   end
-  write_data_en                     <=  0;
   #(100 * `SCLK_PERIOD);
+  r_u2h_write_enable                <=  0;
 
 
-  while (busy) begin
-    #1;
-  end
 
-  #(200 * `SCLK_PERIOD);
-  write_data_en                     <=  1;
+
+  //Put some data in the virtual hard drive
+  r_h2u_read_enable                 <=  1;
+  #(1000 * `SCLK_PERIOD);
+  sector_count                      <=  2;
+  sata_command                      <=  8'h25;  //Read
+  #(1 * `SCLK_PRIOD);
+  sata_execute_command_stb          <=  1;
+  #(1 * `SCLK_PRIOD);
+  sata_execute_command_stb          <=  0;
+
+
+  #(1000 * `SCLK_PERIOD);
   //read_data_en                     <=  1;
   #(20 * `SCLK_PERIOD);
-  while (!busy) begin
+  while (sata_busy) begin
     #1;
   end
-  write_data_en                     <=  1;
-  //read_data_en                     <=  0;
-
-
-
+  r_h2u_read_enable                 <=  0;
 end
 
 initial begin
@@ -349,8 +488,17 @@ initial begin
 end
 */
 
+
+
+
+
+
+
+
+
+
 //Buffer Fill/Drain
-always @ (posedge sata_clk) begin
+always @ (posedge data_clk) begin
   if (rst) begin
     user_din                        <=  0;
     user_din_stb                    <=  0;
