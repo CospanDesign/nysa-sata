@@ -3,7 +3,7 @@ nysa-sata-stack
 
 Sata stack written in Verilog
 
-Staus: TLDR Version: Simulations are working
+Staus: TLDR Version: Demonstrated reading and writing to a hard drive on a Spartan 6 LX45T board
 
 This code was written a long time ago and I've learned much more about verilog and project organization
 since then. It has been proven in a Virtex 6 FPGA reading and writing to/from four Sata 2 hard drives at
@@ -57,3 +57,4 @@ Although I believe this code should be distributed for free and people should re
 I leave the ethics up to the user and have licensesed most of the code as MIT but I did use some GPL cores
 and if the user desires to use this in their closed source project be warned about the GPL'ed modules in
 this stack.
+
