@@ -5,6 +5,10 @@ Sata stack written in Verilog
 
 Staus: TLDR Version: Demonstrated reading and writing to a hard drive on a Spartan 6 LX45T board
 
+For a reference implementation here is a wishbone slave core used to verify the functionality of the SATA Stack:
+
+https://github.com/CospanDesign/nysa-verilog/tree/master/verilog/wishbone/slave/wb_sata
+
 This code was written a long time ago and I've learned much more about verilog and project organization
 since then. It has been proven in a Virtex 6 FPGA reading and writing to/from four Sata 2 hard drives at
 Most of the license is MIT but some of the licenses are GPL
