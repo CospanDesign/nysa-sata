@@ -9,8 +9,6 @@ For a reference implementation here is a wishbone slave core used to verify the 
 
 https://github.com/CospanDesign/nysa-verilog/tree/master/verilog/wishbone/slave/wb_sata
 
-This code was written a long time ago and I've learned much more about verilog and project organization
-since then. It has been proven in a Virtex 6 FPGA reading and writing to/from four Sata 2 hard drives at
 Most of the license is MIT but some of the licenses are GPL
 
 TODO: Fix Link layer... there is a small FIFO in there that is used to handle all starting and stopping
