@@ -9,11 +9,12 @@ For a reference implementation here is a wishbone slave core used to verify the 
 
 https://github.com/CospanDesign/nysa-verilog/tree/master/verilog/wishbone/slave/wb_sata
 
+More documentation can be found on the [wiki](https://github.com/CospanDesign/nysa-sata/wiki)
+
 Most of the license is MIT but some of the licenses are GPL
 
 TODO: Fix Link layer... there is a small FIFO in there that is used to handle all starting and stopping
 of the read, it's a work around and needs to be fixed
-
 TODO: Fix Link layer so that it only instantiates one instance of the scrambler, not two
 
 Code Organization:
