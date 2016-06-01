@@ -448,6 +448,7 @@ always @ (posedge read_clock) begin
 
     r_next_fifo                     <=  0;
     r_read_data                     <=  0;
+    read_ready                      <=  0;
 
   end
   else begin
