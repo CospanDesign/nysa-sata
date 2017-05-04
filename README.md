@@ -13,6 +13,10 @@ More documentation can be found on the [wiki](https://github.com/CospanDesign/ny
 
 Most of the license is MIT but some of the licenses are GPL
 
+Here is a link to a Spartan 6 LX45T Project
+
+http://www.cospandesign.com/Projects/SATA/sata_build.zip
+
 TODO: Fix Link layer... there is a small FIFO in there that is used to handle all starting and stopping
 of the read, it's a work around and needs to be fixed
 TODO: Fix Link layer so that it only instantiates one instance of the scrambler, not two
